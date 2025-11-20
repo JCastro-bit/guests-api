@@ -1,6 +1,12 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { InvitationService } from './invitation.service';
-import { CreateInvitation, UpdateInvitation, InvitationParams } from './invitation.schema';
+import {
+  CreateInvitation,
+  UpdateInvitation,
+  InvitationParams,
+  InvitationQuery,
+  CreateInvitationWithGuests,
+} from './invitation.schema';
 
 export class InvitationController {
   constructor(private service: InvitationService) {}
@@ -13,9 +19,27 @@ export class InvitationController {
     return reply.status(201).send(invitation);
   }
 
-  async getAll(request: FastifyRequest, reply: FastifyReply) {
-    const invitations = await this.service.getAllInvitations();
+  async createWithGuests(
+    request: FastifyRequest<{ Body: CreateInvitationWithGuests }>,
+    reply: FastifyReply
+  ) {
+    const { invitation, guests } = request.body;
+    const result = await this.service.createInvitationWithGuests(invitation, guests);
+    return reply.status(201).send(result);
+  }
+
+  async getAll(
+    request: FastifyRequest<{ Querystring: InvitationQuery }>,
+    reply: FastifyReply
+  ) {
+    const { page, limit } = request.query;
+    const invitations = await this.service.getAllInvitations(page, limit);
     return reply.send(invitations);
+  }
+
+  async getDashboardStats(request: FastifyRequest, reply: FastifyReply) {
+    const stats = await this.service.getDashboardStats();
+    return reply.send(stats);
   }
 
   async getById(

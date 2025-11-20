@@ -10,10 +10,30 @@ export class GuestRepository {
     });
   }
 
-  async findAll(invitationId?: string) {
+  async findAll(invitationId?: string, skip?: number, take?: number) {
     return this.prisma.guest.findMany({
       where: invitationId ? { invitationId } : undefined,
       orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    });
+  }
+
+  async count(invitationId?: string) {
+    return this.prisma.guest.count({
+      where: invitationId ? { invitationId } : undefined,
+    });
+  }
+
+  async findByName(name: string) {
+    return this.prisma.guest.findFirst({
+      where: { name },
+    });
+  }
+
+  async findByOperationId(operationId: string) {
+    return this.prisma.guest.findFirst({
+      where: { operationId },
     });
   }
 

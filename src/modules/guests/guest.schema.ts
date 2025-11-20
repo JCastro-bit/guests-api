@@ -45,6 +45,15 @@ export const GuestParamsSchema = Type.Object({
 
 export const GuestQuerySchema = Type.Object({
   invitationId: Type.Optional(Type.String({ format: 'uuid' })),
+  page: Type.Optional(Type.Integer({ minimum: 1 })),
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+});
+
+export const PaginatedGuestsSchema = Type.Object({
+  data: Type.Array(GuestSchema),
+  total: Type.Integer(),
+  page: Type.Integer(),
+  limit: Type.Integer(),
 });
 
 export type Guest = Static<typeof GuestSchema>;
@@ -52,3 +61,4 @@ export type CreateGuest = Static<typeof CreateGuestSchema>;
 export type UpdateGuest = Static<typeof UpdateGuestSchema>;
 export type GuestParams = Static<typeof GuestParamsSchema>;
 export type GuestQuery = Static<typeof GuestQuerySchema>;
+export type PaginatedGuests = Static<typeof PaginatedGuestsSchema>;

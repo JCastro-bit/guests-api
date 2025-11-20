@@ -17,7 +17,8 @@ export class GuestController {
     request: FastifyRequest<{ Querystring: GuestQuery }>,
     reply: FastifyReply
   ) {
-    const guests = await this.service.getAllGuests(request.query.invitationId);
+    const { invitationId, page, limit } = request.query;
+    const guests = await this.service.getAllGuests(invitationId, page, limit);
     return reply.send(guests);
   }
 
