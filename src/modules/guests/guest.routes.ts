@@ -8,6 +8,7 @@ import {
   UpdateGuestSchema,
   GuestParamsSchema,
   GuestQuerySchema,
+  PaginatedGuestsSchema,
 } from './guest.schema';
 import { Type } from '@sinclair/typebox';
 
@@ -31,10 +32,10 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/', {
     schema: {
       tags: ['guests'],
-      summary: 'Get all guests or filter by invitation',
+      summary: 'Get all guests or filter by invitation (supports pagination)',
       querystring: GuestQuerySchema,
       response: {
-        200: Type.Array(GuestSchema),
+        200: Type.Union([Type.Array(GuestSchema), PaginatedGuestsSchema]),
       },
     },
     handler: controller.getAll.bind(controller),
