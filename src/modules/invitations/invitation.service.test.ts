@@ -173,7 +173,7 @@ describe('InvitationService', () => {
       ];
 
       vi.mocked(mockRepository.findByName).mockResolvedValue(null);
-      vi.mocked(mockPrisma.$transaction).mockImplementation(async (callback) => {
+      vi.mocked(mockPrisma.$transaction).mockImplementation(async (callback: any) => {
         return callback({
           invitation: {
             create: vi.fn().mockResolvedValue(createdInvitation),

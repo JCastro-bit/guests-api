@@ -18,6 +18,18 @@ enum Status {
   declined
 }
 
+model Table {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String       @unique @db.Text
+  capacity    Int          @default(8)
+  location    String?      @db.Text
+  notes       String?      @db.Text
+  createdAt   DateTime     @default(now()) @map("created_at")
+  invitations Invitation[]
+
+  @@map("tables")
+}
+
 model Invitation {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name         String   @db.Text
@@ -27,11 +39,14 @@ model Invitation {
   location     String?  @db.Text
   qrCode       String?  @map("qr_code") @db.Text
   operationId  String?  @map("operation_id") @db.Text
+  tableId      String?  @map("table_id") @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   guests       Guest[]
+  table        Table?   @relation(fields: [tableId], references: [id])
 
   @@index([tableNumber])
   @@index([operationId])
+  @@index([tableId])
   @@map("invitations")
 }
 
