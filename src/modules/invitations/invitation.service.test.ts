@@ -41,7 +41,6 @@ describe('InvitationService', () => {
     it('should create an invitation successfully', async () => {
       const createData: CreateInvitation = {
         name: 'Smith Family',
-        tableNumber: '10',
       };
 
       const expectedInvitation = {
@@ -52,6 +51,7 @@ describe('InvitationService', () => {
         location: null,
         qrCode: null,
         operationId: null,
+        tableId: null,
         createdAt: new Date().toISOString(),
       };
 
@@ -73,12 +73,12 @@ describe('InvitationService', () => {
       const existingInvitation = {
         id: '123',
         name: 'Smith Family',
-        tableNumber: null,
         message: null,
         eventDate: null,
         location: null,
         qrCode: null,
         operationId: null,
+        tableId: null,
         createdAt: new Date().toISOString(),
       };
 
@@ -101,12 +101,12 @@ describe('InvitationService', () => {
       const existingInvitation = {
         id: '456',
         name: 'Jones Family',
-        tableNumber: null,
         message: null,
         eventDate: null,
         location: null,
         qrCode: null,
         operationId: 'OP123',
+        tableId: null,
         createdAt: new Date().toISOString(),
       };
 
@@ -127,7 +127,6 @@ describe('InvitationService', () => {
     it('should create invitation with guests in a transaction', async () => {
       const invitationData: CreateInvitation = {
         name: 'Smith Family',
-        tableNumber: '10',
       };
 
       const guestsData = [
@@ -138,12 +137,12 @@ describe('InvitationService', () => {
       const createdInvitation = {
         id: '123',
         name: 'Smith Family',
-        tableNumber: '10',
         message: null,
         eventDate: null,
         location: null,
         qrCode: null,
         operationId: null,
+        tableId: null,
         createdAt: new Date(),
       };
 
@@ -212,12 +211,12 @@ describe('InvitationService', () => {
         {
           id: '1',
           name: 'Smith Family',
-          tableNumber: null,
           message: null,
           eventDate: null,
           location: null,
           qrCode: null,
           operationId: null,
+          tableId: null,
           createdAt: new Date().toISOString(),
         },
       ];
@@ -236,12 +235,12 @@ describe('InvitationService', () => {
         {
           id: '1',
           name: 'Smith Family',
-          tableNumber: null,
           message: null,
           eventDate: null,
           location: null,
           qrCode: null,
           operationId: null,
+          tableId: null,
           createdAt: new Date().toISOString(),
         },
       ];
@@ -266,12 +265,12 @@ describe('InvitationService', () => {
       const invitation = {
         id: '123',
         name: 'Smith Family',
-        tableNumber: null,
         message: null,
         eventDate: null,
         location: null,
         qrCode: null,
         operationId: null,
+        tableId: null,
         createdAt: new Date().toISOString(),
       };
 
@@ -297,22 +296,22 @@ describe('InvitationService', () => {
       const existingInvitation = {
         id: '123',
         name: 'Smith Family',
-        tableNumber: '10',
         message: null,
         eventDate: null,
         location: null,
         qrCode: null,
         operationId: null,
+        tableId: null,
         createdAt: new Date().toISOString(),
       };
 
       const updateData: UpdateInvitation = {
-        tableNumber: '15',
+        message: 'Welcome to our wedding',
       };
 
       const updatedInvitation = {
         ...existingInvitation,
-        tableNumber: '15',
+        message: 'Welcome to our wedding',
       };
 
       vi.mocked(mockRepository.findById).mockResolvedValue(existingInvitation);
@@ -331,12 +330,12 @@ describe('InvitationService', () => {
       const existingInvitation = {
         id: '123',
         name: 'Smith Family',
-        tableNumber: null,
         message: null,
         eventDate: null,
         location: null,
         qrCode: null,
         operationId: null,
+        tableId: null,
         createdAt: new Date().toISOString(),
       };
 
