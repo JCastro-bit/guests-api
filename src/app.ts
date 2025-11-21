@@ -9,6 +9,7 @@ import errorHandlerPlugin from './plugins/error-handler';
 import invitationRoutes from './modules/invitations/invitation.routes';
 import guestRoutes from './modules/guests/guest.routes';
 import statsRoutes from './modules/stats/stats.routes';
+import tableRoutes from './modules/tables/table.routes';
 
 export const buildApp = async () => {
   const fastify = Fastify({
@@ -35,6 +36,7 @@ export const buildApp = async () => {
   await fastify.register(invitationRoutes, { prefix: '/api/v1/invitations' });
   await fastify.register(guestRoutes, { prefix: '/api/v1/guests' });
   await fastify.register(statsRoutes, { prefix: '/api/v1/stats' });
+  await fastify.register(tableRoutes, { prefix: '/api/v1/tables' });
 
   fastify.get('/health', async () => ({ status: 'ok' }));
 

@@ -55,10 +55,10 @@ export class InvitationRepository {
       }),
     ]);
 
-    const totalGuests = guestStats.reduce((sum, stat) => sum + stat._count, 0);
-    const confirmed = guestStats.find((s) => s.status === 'confirmed')?._count || 0;
-    const pending = guestStats.find((s) => s.status === 'pending')?._count || 0;
-    const declined = guestStats.find((s) => s.status === 'declined')?._count || 0;
+    const totalGuests = guestStats.reduce((sum: number, stat: any) => sum + stat._count, 0);
+    const confirmed = guestStats.find((s: any) => s.status === 'confirmed')?._count || 0;
+    const pending = guestStats.find((s: any) => s.status === 'pending')?._count || 0;
+    const declined = guestStats.find((s: any) => s.status === 'declined')?._count || 0;
 
     return {
       totalInvitations,

@@ -9,6 +9,7 @@ export const InvitationSchema = Type.Object({
   location: Type.Union([Type.String(), Type.Null()]),
   qrCode: Type.Union([Type.String(), Type.Null()]),
   operationId: Type.Union([Type.String(), Type.Null()]),
+  tableId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
   createdAt: Type.String({ format: 'date-time' }),
 });
 
@@ -20,6 +21,7 @@ export const CreateInvitationSchema = Type.Object({
   location: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   qrCode: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   operationId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  tableId: Type.Optional(Type.Union([Type.String({ format: 'uuid' }), Type.Null()])),
 });
 
 export const UpdateInvitationSchema = Type.Object({
@@ -30,6 +32,7 @@ export const UpdateInvitationSchema = Type.Object({
   location: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   qrCode: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   operationId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  tableId: Type.Optional(Type.Union([Type.String({ format: 'uuid' }), Type.Null()])),
 });
 
 export const InvitationParamsSchema = Type.Object({
