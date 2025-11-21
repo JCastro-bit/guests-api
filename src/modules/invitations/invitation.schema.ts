@@ -9,6 +9,17 @@ export const InvitationSchema = Type.Object({
   qrCode: Type.Union([Type.String(), Type.Null()]),
   operationId: Type.Union([Type.String(), Type.Null()]),
   tableId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
+  table: Type.Optional(Type.Union([
+    Type.Object({
+      id: Type.String({ format: 'uuid' }),
+      name: Type.String(),
+      capacity: Type.Integer({ minimum: 1 }),
+      location: Type.Union([Type.String(), Type.Null()]),
+      notes: Type.Union([Type.String(), Type.Null()]),
+      createdAt: Type.String({ format: 'date-time' }),
+    }),
+    Type.Null(),
+  ])),
   createdAt: Type.String({ format: 'date-time' }),
 });
 
