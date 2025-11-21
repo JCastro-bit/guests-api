@@ -33,7 +33,6 @@ model Table {
 model Invitation {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name         String   @db.Text
-  tableNumber  String?  @map("table_number") @db.Text
   message      String?  @db.Text
   eventDate    DateTime? @map("event_date") @db.Date
   location     String?  @db.Text
@@ -44,7 +43,6 @@ model Invitation {
   guests       Guest[]
   table        Table?   @relation(fields: [tableId], references: [id])
 
-  @@index([tableNumber])
   @@index([operationId])
   @@index([tableId])
   @@map("invitations")

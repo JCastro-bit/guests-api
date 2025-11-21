@@ -10,6 +10,7 @@ export class InvitationRepository {
         ...data,
         eventDate: data.eventDate ? new Date(data.eventDate) : null,
       },
+      include: { table: true },
     });
   }
 
@@ -18,6 +19,7 @@ export class InvitationRepository {
       orderBy: { createdAt: 'desc' },
       skip,
       take,
+      include: { table: true },
     });
   }
 
@@ -72,7 +74,7 @@ export class InvitationRepository {
   async findById(id: string) {
     return this.prisma.invitation.findUnique({
       where: { id },
-      include: { guests: true },
+      include: { guests: true, table: true },
     });
   }
 
@@ -85,6 +87,7 @@ export class InvitationRepository {
           ? data.eventDate ? new Date(data.eventDate) : null
           : undefined,
       },
+      include: { table: true },
     });
   }
 
