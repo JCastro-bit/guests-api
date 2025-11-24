@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Side {
+  bride
+  groom
+}
+
+enum Status {
+  pending
+  confirmed
+  declined
+}
+
+model Table {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String       @unique @db.Text
+  capacity    Int          @default(8)
+  location    String?      @db.Text
+  notes       String?      @db.Text
+  createdAt   DateTime     @default(now()) @map("created_at")
+  invitations Invitation[]
+
+  @@map("tables")
+}
+
+model Invitation {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String   @db.Text
+  message      String?  @db.Text
+  eventDate    DateTime? @map("event_date") @db.Date
+  location     String?  @db.Text
+  qrCode       String?  @map("qr_code") @db.Text
+  operationId  String?  @map("operation_id") @db.Text
+  tableId      String?  @map("table_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  guests       Guest[]
+  table        Table?   @relation(fields: [tableId], references: [id])
+
+  @@index([operationId])
+  @@index([tableId])
+  @@map("invitations")
+}
+
+model Guest {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String      @db.Text
+  side         Side
+  phone        String?     @db.Text
+  email        String?     @db.Text
+  status       Status      @default(pending)
+  invitationId String?     @map("invitation_id") @db.Uuid
+  operationId  String?     @map("operation_id") @db.Text
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+
+  @@index([invitationId])
+  @@index([status])
+  @@index([operationId])
+  @@map("guests")
+}
