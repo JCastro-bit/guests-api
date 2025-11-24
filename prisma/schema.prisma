@@ -63,14 +63,15 @@ model User {
 
 model Table {
   id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
   name           String       @db.Text
   capacity       Int          @default(8)
   location       String?      @db.Text
   notes          String?      @db.Text
-  organizationId String       @map("organization_id") @db.Uuid
   createdAt      DateTime     @default(now()) @map("created_at")
-  invitations    Invitation[]
+
   organization   Organization @relation(fields: [organizationId], references: [id])
+  invitations    Invitation[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -79,6 +80,7 @@ model Table {
 
 model Invitation {
   id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
   name           String       @db.Text
   message        String?      @db.Text
   eventDate      DateTime?    @map("event_date") @db.Date
@@ -86,21 +88,22 @@ model Invitation {
   qrCode         String?      @map("qr_code") @db.Text
   operationId    String?      @map("operation_id") @db.Text
   tableId        String?      @map("table_id") @db.Uuid
-  organizationId String       @map("organization_id") @db.Uuid
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
   guests         Guest[]
   table          Table?       @relation(fields: [tableId], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id])
 
   @@unique([organizationId, name])
+  @@index([organizationId])
   @@index([operationId])
   @@index([tableId])
-  @@index([organizationId])
   @@map("invitations")
 }
 
 model Guest {
   id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
   name           String       @db.Text
   side           Side
   phone          String?      @db.Text
@@ -108,15 +111,15 @@ model Guest {
   status         Status       @default(pending)
   invitationId   String?      @map("invitation_id") @db.Uuid
   operationId    String?      @map("operation_id") @db.Text
-  organizationId String       @map("organization_id") @db.Uuid
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  invitation     Invitation?  @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+
   organization   Organization @relation(fields: [organizationId], references: [id])
+  invitation     Invitation?  @relation(fields: [invitationId], references: [id], onDelete: SetNull)
 
   @@unique([organizationId, name])
+  @@index([organizationId])
   @@index([invitationId])
   @@index([status])
   @@index([operationId])
-  @@index([organizationId])
   @@map("guests")
 }
