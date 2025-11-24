@@ -18,50 +18,105 @@ enum Status {
   declined
 }
 
-model Table {
-  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String       @unique @db.Text
-  capacity    Int          @default(8)
-  location    String?      @db.Text
-  notes       String?      @db.Text
-  createdAt   DateTime     @default(now()) @map("created_at")
-  invitations Invitation[]
+enum UserRole {
+  owner
+  admin
+  editor
+  viewer
+}
 
+model Organization {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String       @unique @db.Text
+  name        String       @db.Text
+  domain      String?      @unique @db.Text
+  settings    Json?        @db.Json
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  users       User[]
+  invitations Invitation[]
+  guests      Guest[]
+  tables      Table[]
+
+  @@index([slug])
+  @@index([domain])
+  @@map("organizations")
+}
+
+model User {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String       @unique @db.Text
+  password       String       @db.Text
+  name           String       @db.Text
+  role           UserRole     @default(viewer)
+  organizationId String       @map("organization_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("users")
+}
+
+model Table {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String       @db.Text
+  capacity       Int          @default(8)
+  location       String?      @db.Text
+  notes          String?      @db.Text
+  organizationId String       @map("organization_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at")
+  invitations    Invitation[]
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
   @@map("tables")
 }
 
 model Invitation {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String   @db.Text
-  message      String?  @db.Text
-  eventDate    DateTime? @map("event_date") @db.Date
-  location     String?  @db.Text
-  qrCode       String?  @map("qr_code") @db.Text
-  operationId  String?  @map("operation_id") @db.Text
-  tableId      String?  @map("table_id") @db.Uuid
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  guests       Guest[]
-  table        Table?   @relation(fields: [tableId], references: [id])
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String       @db.Text
+  message        String?      @db.Text
+  eventDate      DateTime?    @map("event_date") @db.Date
+  location       String?      @db.Text
+  qrCode         String?      @map("qr_code") @db.Text
+  operationId    String?      @map("operation_id") @db.Text
+  tableId        String?      @map("table_id") @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  guests         Guest[]
+  table          Table?       @relation(fields: [tableId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
+  @@unique([organizationId, name])
   @@index([operationId])
   @@index([tableId])
+  @@index([organizationId])
   @@map("invitations")
 }
 
 model Guest {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String      @db.Text
-  side         Side
-  phone        String?     @db.Text
-  email        String?     @db.Text
-  status       Status      @default(pending)
-  invitationId String?     @map("invitation_id") @db.Uuid
-  operationId  String?     @map("operation_id") @db.Text
-  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String       @db.Text
+  side           Side
+  phone          String?      @db.Text
+  email          String?      @db.Text
+  status         Status       @default(pending)
+  invitationId   String?      @map("invitation_id") @db.Uuid
+  operationId    String?      @map("operation_id") @db.Text
+  organizationId String       @map("organization_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  invitation     Invitation?  @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
+  @@unique([organizationId, name])
   @@index([invitationId])
   @@index([status])
   @@index([operationId])
+  @@index([organizationId])
   @@map("guests")
 }
