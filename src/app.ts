@@ -6,6 +6,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import { swaggerOptions, swaggerUiOptions } from './config/swagger';
 import prismaPlugin from './plugins/prisma';
 import errorHandlerPlugin from './plugins/error-handler';
+import jwtPlugin from './plugins/jwt.plugin';
 import invitationRoutes from './modules/invitations/invitation.routes';
 import guestRoutes from './modules/guests/guest.routes';
 import statsRoutes from './modules/stats/stats.routes';
@@ -31,6 +32,7 @@ export const buildApp = async () => {
   await fastify.register(swagger, swaggerOptions);
   await fastify.register(swaggerUi, swaggerUiOptions);
   await fastify.register(prismaPlugin);
+  await fastify.register(jwtPlugin);
   await fastify.register(errorHandlerPlugin);
 
   await fastify.register(invitationRoutes, { prefix: '/api/v1/invitations' });
