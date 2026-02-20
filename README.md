@@ -31,7 +31,7 @@ src/
 └── server.ts        # Entrypoint — listen + graceful shutdown
 ```
 
-## Prerequisitos
+## Prerrequisitos
 
 - Node.js >= 18
 - PostgreSQL
