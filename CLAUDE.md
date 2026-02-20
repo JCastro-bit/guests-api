@@ -280,3 +280,57 @@ Guest (guests)
 8. **Commits atómicos** — un cambio lógico por commit
 9. **No romper backwards compatibility** sin documentar breaking changes
 10. **Dominio correcto** — siempre `lovepostal.studio`, NUNCA `lovepostal.app`
+
+## Docker / Deploy
+
+### Dockerfile
+
+Build multi-stage con 2 etapas:
+
+1. **builder:** Instala todas las dependencias, genera el cliente Prisma, compila TypeScript
+2. **runner:** Solo dependencias de producción, copia dist/, cliente Prisma y CLI desde builder
+
+- Base image: `node:20-alpine`
+- `npm ci` para builds reproducibles (`--only=production --ignore-scripts` en runner)
+- NO ejecuta migraciones durante el build
+
+### Entrypoint (`docker-entrypoint.sh`)
+
+1. Ejecuta `prisma migrate deploy` (aplica migraciones pendientes, seguro para producción)
+2. Inicia el servidor con `exec node dist/server.js` (PID 1 para graceful shutdown)
+3. Si la migración falla, el contenedor falla (`set -e`)
+
+### Configuración Dokploy
+
+| Configuración | Valor |
+|---------------|-------|
+| Build Type | Dockerfile |
+| Docker File | Dockerfile |
+| Container Port | 3000 |
+| Domain | api.lovepostal.studio |
+| HTTPS | Enabled (Let's Encrypt) |
+| Trigger | On Push (branch main) |
+
+### Variables de Entorno (Dokploy → App → Environment)
+
+```
+DATABASE_URL=postgresql://lovepostal_user:<PASSWORD_URL_ENCODED>@lovepostal-database-sntqvk:5432/lovepostal_db
+NODE_ENV=production
+PORT=3000
+HOST=0.0.0.0
+```
+
+> **Nota:** El password del DB contiene `+` y `=` que deben estar URL-encoded (`%2B` y `%3D`).
+
+### DNS (Hostinger)
+
+```
+Tipo A: api → 76.13.97.90  TTL 300
+```
+
+### Comandos Docker
+
+| Comando | Descripción |
+|---------|-------------|
+| `docker build -t guests-api .` | Construir imagen |
+| `docker run -p 3000:3000 --env-file .env guests-api` | Ejecutar contenedor localmente |
