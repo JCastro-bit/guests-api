@@ -20,8 +20,9 @@ Arquitectura limpia con separación de responsabilidades. Cada módulo sigue el 
 ```
 src/
 ├── config/          # Configuración (env, swagger)
-├── plugins/         # Plugins de Fastify (prisma, error-handler)
+├── plugins/         # Plugins de Fastify (prisma, jwt, error-handler)
 ├── modules/
+│   ├── auth/        # Módulo de autenticación
 │   ├── invitations/ # Módulo de invitaciones
 │   ├── guests/      # Módulo de invitados
 │   ├── tables/      # Módulo de mesas
@@ -74,6 +75,9 @@ npm run prisma:migrate
 | `NODE_ENV` | Entorno de ejecución | `development` / `production` |
 | `PORT` | Puerto del servidor | `3000` |
 | `HOST` | Host del servidor | `0.0.0.0` |
+| `JWT_SECRET` | Secret para JWT | `change-me-in-production` |
+| `ADMIN_EMAIL` | Email del admin para seed | `admin@lovepostal.studio` |
+| `ADMIN_PASSWORD` | Password del admin para seed | (vacío = skip) |
 
 ## Scripts Disponibles
 
@@ -88,6 +92,12 @@ npm run prisma:migrate
 - `npm run prisma:studio` - Abre Prisma Studio para gestionar la BD
 
 ## Endpoints
+
+### Auth
+
+- `POST /api/v1/auth/register` - Registrar nuevo usuario
+- `POST /api/v1/auth/login` - Iniciar sesión
+- `GET /api/v1/auth/me` - Obtener perfil (requiere JWT)
 
 ### Invitations
 
@@ -158,9 +168,10 @@ npm run test:ui
 
 ## Características
 
+- Autenticación JWT con email/password
 - Validación estricta de entrada/salida con TypeBox
 - Documentación OpenAPI generada automáticamente
-- Manejo de errores centralizado
+- Manejo de errores centralizado con mapeo de status codes
 - Logs estructurados con Pino
 - CORS y Helmet configurados
 - Graceful shutdown

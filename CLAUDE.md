@@ -23,6 +23,8 @@ Repositorio backend del sistema de gestión de invitados para **LOVEPOSTAL**, un
 | @fastify/cors | ^10.1.0 | CORS |
 | @fastify/helmet | ^12.0.1 | Headers de seguridad |
 | Pino | ^9.5.0 | Logging estructurado |
+| @fastify/jwt | - | Autenticación JWT |
+| bcrypt | - | Hash de passwords |
 | Vitest | ^4.0.12 | Testing |
 | tsx | ^4.19.2 | Ejecución TypeScript en desarrollo |
 
@@ -31,12 +33,20 @@ Repositorio backend del sistema de gestión de invitados para **LOVEPOSTAL**, un
 ```
 src/
 ├── config/
-│   ├── env.ts              # Variables de entorno (DATABASE_URL, NODE_ENV, PORT, HOST)
+│   ├── env.ts              # Variables de entorno (DATABASE_URL, NODE_ENV, PORT, HOST, JWT_SECRET)
 │   └── swagger.ts          # Configuración OpenAPI/Swagger
 ├── plugins/
 │   ├── prisma.ts           # Plugin Fastify: inyecta PrismaClient en fastify.prisma
-│   └── error-handler.ts    # Plugin Fastify: manejo centralizado de errores
+│   ├── jwt.ts              # Plugin Fastify: registra @fastify/jwt y decorator authenticate
+│   └── error-handler.ts    # Plugin Fastify: manejo centralizado de errores con mapeo de status codes
 ├── modules/
+│   ├── auth/               # Autenticación (registro, login, perfil)
+│   │   ├── auth.schema.ts
+│   │   ├── auth.repository.ts
+│   │   ├── auth.service.ts
+│   │   ├── auth.service.test.ts
+│   │   ├── auth.controller.ts
+│   │   └── auth.routes.ts
 │   ├── guests/             # CRUD invitados
 │   │   ├── guest.schema.ts
 │   │   ├── guest.repository.ts
@@ -62,7 +72,7 @@ src/
 │       ├── stats.controller.ts
 │       └── stats.routes.ts
 ├── types/
-│   └── fastify.d.ts        # Augmentación de tipos: FastifyInstance.prisma
+│   └── fastify.d.ts        # Augmentación de tipos: FastifyInstance.prisma, authenticate
 ├── app.ts                  # buildApp() — registra plugins, middleware y rutas
 └── server.ts               # Entrypoint — listen + graceful shutdown (SIGINT/SIGTERM)
 ```
@@ -88,6 +98,33 @@ const controller = new GuestController(service);
 ```
 
 ## Módulos
+
+### Auth
+
+Autenticación de usuarios con JWT.
+
+**Endpoints:**
+- `POST /api/v1/auth/register` — Registrar nuevo usuario (público)
+- `POST /api/v1/auth/login` — Iniciar sesión (público)
+- `GET /api/v1/auth/me` — Obtener perfil del usuario autenticado (protegido)
+
+**Reglas de negocio:**
+- Email único a nivel de base de datos (constraint UNIQUE)
+- Passwords hasheadas con bcrypt (cost 10)
+- JWT expira en 7 días
+- Login retorna mismo error genérico para email inexistente y password incorrecta (prevención de enumeración)
+- La respuesta NUNCA incluye el hash de password
+
+**Roles:**
+- `user`: rol por defecto al registrarse
+- `admin`: asignado solo via seed o directamente en base de datos
+- No hay restricciones basadas en roles todavía — preparado para futuro uso
+
+**Super Admin Seed:**
+- Se configura con `ADMIN_EMAIL` y `ADMIN_PASSWORD` en variables de entorno
+- Se ejecuta con `npx prisma db seed`
+- Si las variables no están definidas, el seed se salta sin error
+- Usa upsert: seguro de ejecutar múltiples veces
 
 ### Guests
 
@@ -193,6 +230,14 @@ Guest (guests)
 ├── invitationId String? FK -> Invitation.id (indexed, onDelete: SetNull)
 ├── invitation   Invitation? (many-to-one)
 └── createdAt    DateTime
+
+User (users)
+├── id        UUID    PK, auto-generated
+├── email     String  UNIQUE
+├── password  String  (bcrypt hash)
+├── name      String? opcional
+├── role      Role    enum: user | admin (default: user)
+└── createdAt DateTime
 ```
 
 **Comportamiento en cascada:**
@@ -223,7 +268,7 @@ Guest (guests)
 - Repositorios reciben `PrismaClient`, services reciben repositories
 - Controllers reciben services
 - Routes instancian la cadena de dependencias
-- Errores en services: `throw new Error('mensaje')` (genérico, el error handler mapea a 500 por defecto)
+- Errores en services: `throw new Error('mensaje')` (el error handler mapea mensajes conocidos a status codes HTTP)
 - Logs con Pino (integrado en Fastify)
 - Sin ESLint/Prettier configurado actualmente
 
@@ -249,12 +294,16 @@ Guest (guests)
 | NODE_ENV | Entorno de ejecución | development / production |
 | PORT | Puerto del servidor | 3000 |
 | HOST | Host del servidor | 0.0.0.0 |
+| JWT_SECRET | Secret para firmar JWT tokens | (string seguro, cambiar en producción) |
+| ADMIN_EMAIL | Email del super admin (seed) | admin@lovepostal.studio |
+| ADMIN_PASSWORD | Password del super admin (seed) | (vacío = skip seed) |
 
 ## Swagger/OpenAPI
 
 - **URL local:** http://localhost:3000/docs
 - **URL producción:** https://api.lovepostal.studio/docs
-- **Tags:** invitations, guests, tables, stats
+- **Tags:** auth, invitations, guests, tables, stats
+- **Security:** Bearer JWT configurado en securitySchemes
 - **Todos los endpoints deben tener schema completo** (body, params, query, responses)
 - **Nota:** Actualmente hay 4 usos de `Type.Any()` que deben reemplazarse con schemas tipados
 
@@ -263,7 +312,7 @@ Guest (guests)
 - **Framework:** Vitest ^4.0.12
 - **Patrón:** Mocks manuales de repository con `vi.fn()` para unit tests de services
 - **Ubicación:** Colocados junto al código (`modulo.service.test.ts`)
-- **Cobertura actual:** 2 de 4 módulos tienen tests (guests y invitations)
+- **Cobertura actual:** 3 de 5 módulos tienen tests (auth, guests y invitations)
 - **Módulos sin tests:** tables, stats
 - **Ejecutar antes de cada PR:** `npm run test:run`
 - **Config:** `vitest.config.ts` con coverage v8
@@ -280,6 +329,9 @@ Guest (guests)
 8. **Commits atómicos** — un cambio lógico por commit
 9. **No romper backwards compatibility** sin documentar breaking changes
 10. **Dominio correcto** — siempre `lovepostal.studio`, NUNCA `lovepostal.app`
+11. Las rutas `/api/v1/auth/register` y `/api/v1/auth/login` son públicas; `/api/v1/auth/me` usa `preHandler: [fastify.authenticate]`
+12. NUNCA retornar el campo `password` del modelo User en ninguna respuesta
+13. Los errores de login SIEMPRE deben usar el mensaje genérico 'Invalid email or password'
 
 ## Docker / Deploy
 
@@ -334,3 +386,16 @@ Tipo A: api → 76.13.97.90  TTL 300
 |---------|-------------|
 | `docker build -t guests-api .` | Construir imagen |
 | `docker run -p 3000:3000 --env-file .env guests-api` | Ejecutar contenedor localmente |
+
+## Roadmap: Multi-tenancy
+
+**Estado actual:** Single-tenant. Todos los datos (guests, invitations, tables) son compartidos. El módulo auth existe pero no filtra datos por usuario.
+
+**Próximo paso (Fase 2):**
+1. Agregar `userId` (FK a users) en los modelos Table, Invitation y Guest
+2. Crear migración para agregar la columna con `@default` o migración de datos
+3. Actualizar todos los repositories para recibir `userId` y filtrar por él
+4. El decorator `authenticate` ya inyecta `request.user.id` — pasar a controllers → services → repositories
+5. Proteger TODAS las rutas existentes con `preHandler: [fastify.authenticate]`
+
+**Decisión de diseño:** Cada usuario = su propia boda (1 user = 1 tenant). Si en el futuro se necesita que múltiples usuarios gestionen la misma boda, agregar modelo `Wedding` con relación many-to-many a User. Pero NO implementar esto ahora (YAGNI).
