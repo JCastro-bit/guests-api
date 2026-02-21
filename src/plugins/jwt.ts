@@ -13,16 +13,11 @@ const jwtPlugin: FastifyPluginAsync = async (fastify) => {
 
   fastify.decorate(
     'authenticate',
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    async (request: FastifyRequest, _reply: FastifyReply) => {
       try {
         await request.jwtVerify();
       } catch (err) {
-        reply.code(401).send({
-          error: {
-            statusCode: 401,
-            message: 'No autorizado',
-          },
-        });
+        throw new Error('Unauthorized');
       }
     }
   );

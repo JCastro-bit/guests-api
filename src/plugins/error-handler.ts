@@ -7,7 +7,7 @@ const ERROR_STATUS_MAP: Record<string, number> = {
   'Email already registered': 409,
   'Invalid email or password': 401,
   'User not found': 404,
-  'No autorizado': 401,
+  'Unauthorized': 401,
 
   // Guest errors
   'Guest not found': 404,
