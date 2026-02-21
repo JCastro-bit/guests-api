@@ -6,7 +6,7 @@ export const swaggerOptions: FastifyDynamicSwaggerOptions = {
     info: {
       title: 'LOVEPOSTAL — Guests API',
       description: 'API REST para gestión de invitados, invitaciones y mesas de boda. Parte de la plataforma LOVEPOSTAL.',
-      version: '1.0.0',
+      version: '1.1.0',
     },
     servers: [
       {
@@ -19,11 +19,22 @@ export const swaggerOptions: FastifyDynamicSwaggerOptions = {
       },
     ],
     tags: [
+      { name: 'auth', description: 'Autenticación y registro de usuarios' },
       { name: 'invitations', description: 'Gestión de invitaciones' },
       { name: 'guests', description: 'Gestión de invitados' },
       { name: 'tables', description: 'Gestión de mesas' },
       { name: 'stats', description: 'Estadísticas y dashboard' },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'JWT token obtenido de /api/v1/auth/login o /api/v1/auth/register',
+        },
+      },
+    },
   },
 };
 

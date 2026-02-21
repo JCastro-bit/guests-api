@@ -65,3 +65,19 @@ model Guest {
   @@index([operationId])
   @@map("guests")
 }
+
+enum Role {
+  user
+  admin
+}
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique @db.Text
+  password  String   @db.Text
+  name      String?  @db.Text
+  role      Role     @default(user)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("users")
+}
