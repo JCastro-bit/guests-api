@@ -39,14 +39,14 @@ export class AuthService {
   async login(data: LoginBody): Promise<SafeUser> {
     // Buscar usuario por email
     const user = await this.repository.findByEmail(data.email);
-    if (!user) {
-      // Mensaje genérico para no revelar si el email existe
-      throw new Error('Invalid email or password');
-    }
 
-    // Comparar passwords
-    const isValid = await bcrypt.compare(data.password, user.password);
-    if (!isValid) {
+    // Always run bcrypt.compare to prevent timing attacks even when user not found
+    const dummyHash = '$2b$10$h.uYw3jwWjPrkM.kU8BdjegNr0zuwdBBmgnpUvahf6yooRnj3iBdy';
+    const isValid = user
+      ? await bcrypt.compare(data.password, user.password)
+      : await bcrypt.compare(data.password, dummyHash).then(() => false);
+
+    if (!user || !isValid) {
       throw new Error('Invalid email or password');
     }
 
