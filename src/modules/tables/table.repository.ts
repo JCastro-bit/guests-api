@@ -46,6 +46,7 @@ export class TableRepository {
         createdAt: table.createdAt,
         guestCount,
         available: table.capacity - guestCount,
+        invitationCount: table.invitations.length,
       };
     });
   }

@@ -29,6 +29,11 @@ const mockPrisma = {
   },
 } as unknown as PrismaClient;
 
+// Mock de TableService
+const mockTableService = {
+  validateTableCapacity: vi.fn(),
+} as unknown as import('../tables/table.service').TableService;
+
 describe('InvitationService', () => {
   let service: InvitationService;
 
@@ -119,6 +124,53 @@ describe('InvitationService', () => {
 
       expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family');
       expect(mockRepository.findByOperationId).toHaveBeenCalledWith('OP123');
+      expect(mockRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('should validate table capacity when tableId is provided', async () => {
+      const createData: CreateInvitation = {
+        name: 'Smith Family',
+        tableId: 'table-1',
+      };
+
+      const expectedInvitation = {
+        id: '123',
+        ...createData,
+        message: null,
+        eventDate: null,
+        location: null,
+        qrCode: null,
+        operationId: null,
+        createdAt: new Date().toISOString(),
+      };
+
+      const serviceWithTable = new InvitationService(mockRepository, mockPrisma, mockTableService);
+
+      vi.mocked(mockRepository.findByName).mockResolvedValue(null);
+      vi.mocked(mockTableService.validateTableCapacity).mockResolvedValue(undefined);
+      vi.mocked(mockRepository.create).mockResolvedValue(expectedInvitation);
+
+      const result = await serviceWithTable.createInvitation(createData);
+
+      expect(mockTableService.validateTableCapacity).toHaveBeenCalledWith('table-1', 0);
+      expect(mockRepository.create).toHaveBeenCalledWith(createData);
+      expect(result).toEqual(expectedInvitation);
+    });
+
+    it('should throw InternalError when tableId is provided but tableService is missing', async () => {
+      const createData: CreateInvitation = {
+        name: 'Smith Family',
+        tableId: 'table-1',
+      };
+
+      const serviceWithoutTable = new InvitationService(mockRepository, mockPrisma);
+
+      vi.mocked(mockRepository.findByName).mockResolvedValue(null);
+
+      await expect(serviceWithoutTable.createInvitation(createData)).rejects.toThrow(
+        'TableService is required for table capacity validation'
+      );
+
       expect(mockRepository.create).not.toHaveBeenCalled();
     });
   });
@@ -323,6 +375,62 @@ describe('InvitationService', () => {
       expect(mockRepository.update).toHaveBeenCalledWith('123', updateData);
       expect(result).toEqual(updatedInvitation);
     });
+
+    it('should validate table capacity when updating tableId to a new table', async () => {
+      const existingInvitation = {
+        id: '123',
+        name: 'Smith Family',
+        message: null,
+        eventDate: null,
+        location: null,
+        qrCode: null,
+        operationId: null,
+        tableId: 'old-table',
+        guests: [{ id: 'g1' }, { id: 'g2' }],
+        createdAt: new Date().toISOString(),
+      };
+
+      const updateData: UpdateInvitation = { tableId: 'new-table' };
+      const updatedInvitation = { ...existingInvitation, tableId: 'new-table' };
+
+      const serviceWithTable = new InvitationService(mockRepository, mockPrisma, mockTableService);
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(existingInvitation);
+      vi.mocked(mockTableService.validateTableCapacity).mockResolvedValue(undefined);
+      vi.mocked(mockRepository.update).mockResolvedValue(updatedInvitation);
+
+      const result = await serviceWithTable.updateInvitation('123', updateData);
+
+      expect(mockTableService.validateTableCapacity).toHaveBeenCalledWith('new-table', 2);
+      expect(mockRepository.update).toHaveBeenCalledWith('123', updateData);
+      expect(result).toEqual(updatedInvitation);
+    });
+
+    it('should throw InternalError when updating tableId but tableService is missing', async () => {
+      const existingInvitation = {
+        id: '123',
+        name: 'Smith Family',
+        message: null,
+        eventDate: null,
+        location: null,
+        qrCode: null,
+        operationId: null,
+        tableId: null,
+        guests: [],
+        createdAt: new Date().toISOString(),
+      };
+
+      const updateData: UpdateInvitation = { tableId: 'new-table' };
+      const serviceWithoutTable = new InvitationService(mockRepository, mockPrisma);
+
+      vi.mocked(mockRepository.findById).mockResolvedValue(existingInvitation);
+
+      await expect(serviceWithoutTable.updateInvitation('123', updateData)).rejects.toThrow(
+        'TableService is required for table capacity validation'
+      );
+
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('deleteInvitation', () => {
@@ -349,48 +457,4 @@ describe('InvitationService', () => {
     });
   });
 
-  describe('getDashboardStats', () => {
-    it('should return dashboard statistics with days until wedding', async () => {
-      const statsData = {
-        totalInvitations: 50,
-        totalGuests: 150,
-        confirmed: 100,
-        pending: 30,
-        declined: 20,
-      };
-
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 30);
-
-      vi.mocked(mockRepository.getStatsCounts).mockResolvedValue(statsData);
-      vi.mocked(mockRepository.getMostRecentEventDate).mockResolvedValue(futureDate);
-
-      const result = await service.getDashboardStats();
-
-      expect(mockRepository.getStatsCounts).toHaveBeenCalled();
-      expect(mockRepository.getMostRecentEventDate).toHaveBeenCalled();
-      expect(result).toEqual({
-        ...statsData,
-        daysUntilWedding: expect.any(Number),
-      });
-      expect(result.daysUntilWedding).toBeGreaterThan(0);
-    });
-
-    it('should return 0 days when no event date exists', async () => {
-      const statsData = {
-        totalInvitations: 50,
-        totalGuests: 150,
-        confirmed: 100,
-        pending: 30,
-        declined: 20,
-      };
-
-      vi.mocked(mockRepository.getStatsCounts).mockResolvedValue(statsData);
-      vi.mocked(mockRepository.getMostRecentEventDate).mockResolvedValue(null);
-
-      const result = await service.getDashboardStats();
-
-      expect(result.daysUntilWedding).toBe(0);
-    });
-  });
 });

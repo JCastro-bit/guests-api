@@ -1,5 +1,7 @@
 import { GuestRepository } from './guest.repository';
 import { CreateGuest, UpdateGuest } from './guest.schema';
+import { ConflictError, NotFoundError } from '../../errors/app-error';
+import { calcPaginationParams, formatPaginatedResponse } from '../../utils/pagination';
 
 export class GuestService {
   constructor(private repository: GuestRepository) {}
@@ -8,14 +10,14 @@ export class GuestService {
     // Verificar duplicado por nombre
     const existingByName = await this.repository.findByName(data.name);
     if (existingByName) {
-      throw new Error('Guest with this name already exists');
+      throw ConflictError('Guest with this name already exists');
     }
 
     // Verificar duplicado por operationId si existe
     if (data.operationId) {
       const existingByOperationId = await this.repository.findByOperationId(data.operationId);
       if (existingByOperationId) {
-        throw new Error('Guest with this operationId already exists');
+        throw ConflictError('Guest with this operationId already exists');
       }
     }
 
@@ -23,30 +25,20 @@ export class GuestService {
   }
 
   async getAllGuests(invitationId?: string, page?: number, limit?: number) {
-    const skip = page && limit ? (page - 1) * limit : undefined;
-    const take = limit;
+    const { skip, take } = calcPaginationParams(page, limit);
 
     const [data, total] = await Promise.all([
       this.repository.findAll(invitationId, skip, take),
       this.repository.count(invitationId),
     ]);
 
-    if (page && limit) {
-      return {
-        data,
-        total,
-        page,
-        limit,
-      };
-    }
-
-    return data;
+    return formatPaginatedResponse(data, total, page, limit);
   }
 
   async getGuestById(id: string) {
     const guest = await this.repository.findById(id);
     if (!guest) {
-      throw new Error('Guest not found');
+      throw NotFoundError('Guest');
     }
     return guest;
   }

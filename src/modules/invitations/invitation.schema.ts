@@ -6,8 +6,8 @@ export const InvitationSchema = Type.Object({
   message: Type.Union([Type.String(), Type.Null()]),
   eventDate: Type.Union([Type.String({ format: 'date' }), Type.Null()]),
   location: Type.Union([Type.String(), Type.Null()]),
-  qrCode: Type.Union([Type.String(), Type.Null()]),
-  operationId: Type.Union([Type.String(), Type.Null()]),
+  qrCode: Type.Union([Type.String(), Type.Null()]), // TODO: evaluar remoción si no se usa en frontend
+  operationId: Type.Union([Type.String(), Type.Null()]), // TODO: evaluar remoción si no se usa en frontend
   tableId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
   table: Type.Optional(Type.Union([
     Type.Object({

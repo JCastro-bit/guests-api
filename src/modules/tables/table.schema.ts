@@ -12,7 +12,7 @@ export const TableSchema = Type.Object({
 export const CreateTableSchema = Type.Object({
   name: Type.String({ minLength: 1 }),
   capacity: Type.Optional(Type.Integer({ minimum: 1, default: 8 })),
-  location: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  location: Type.Optional(Type.Union([Type.String(), Type.Null()])), // TODO: evaluar remoción si no se usa en frontend
   notes: Type.Optional(Type.Union([Type.String(), Type.Null()])),
 });
 

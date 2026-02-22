@@ -2,6 +2,8 @@ import { FastifyPluginAsync } from 'fastify';
 import { InvitationController } from './invitation.controller';
 import { InvitationService } from './invitation.service';
 import { InvitationRepository } from './invitation.repository';
+import { TableRepository } from '../tables/table.repository';
+import { TableService } from '../tables/table.service';
 import {
   InvitationSchema,
   CreateInvitationSchema,
@@ -15,7 +17,9 @@ import { Type } from '@sinclair/typebox';
 
 const invitationRoutes: FastifyPluginAsync = async (fastify) => {
   const repository = new InvitationRepository(fastify.prisma);
-  const service = new InvitationService(repository, fastify.prisma);
+  const tableRepository = new TableRepository(fastify.prisma);
+  const tableService = new TableService(tableRepository);
+  const service = new InvitationService(repository, fastify.prisma, tableService);
   const controller = new InvitationController(service);
 
   fastify.post('/', {
