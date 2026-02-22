@@ -17,14 +17,16 @@ export class TableService {
   }
 
   async getAllTables(page?: number, limit?: number) {
-    const { skip, take } = calcPaginationParams(page, limit);
+    if (page !== undefined && limit !== undefined) {
+      const { skip, take } = calcPaginationParams(page, limit);
+      const [data, total] = await Promise.all([
+        this.repository.findAllWithStats(skip, take),
+        this.repository.count(),
+      ]);
+      return formatPaginatedResponse(data, total, page, limit);
+    }
 
-    const [data, total] = await Promise.all([
-      this.repository.findAllWithStats(skip, take),
-      this.repository.count(),
-    ]);
-
-    return formatPaginatedResponse(data, total, page, limit);
+    return this.repository.findAllWithStats();
   }
 
   async getTableById(id: string) {
