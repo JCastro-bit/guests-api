@@ -35,10 +35,12 @@ src/
 ├── config/
 │   ├── env.ts              # Variables de entorno (DATABASE_URL, NODE_ENV, PORT, HOST, JWT_SECRET)
 │   └── swagger.ts          # Configuración OpenAPI/Swagger
+├── errors/
+│   └── app-error.ts        # AppError class + factories: NotFoundError, ConflictError, UnauthorizedError, InternalError
 ├── plugins/
 │   ├── prisma.ts           # Plugin Fastify: inyecta PrismaClient en fastify.prisma
 │   ├── jwt.ts              # Plugin Fastify: registra @fastify/jwt y decorator authenticate
-│   └── error-handler.ts    # Plugin Fastify: manejo centralizado de errores con mapeo de status codes
+│   └── error-handler.ts    # Plugin Fastify: detecta instanceof AppError y usa su statusCode directamente
 ├── modules/
 │   ├── auth/               # Autenticación (registro, login, perfil)
 │   │   ├── auth.schema.ts
@@ -69,10 +71,14 @@ src/
 │   │   └── table.routes.ts
 │   └── stats/              # Dashboard y estadísticas
 │       ├── stats.schema.ts
+│       ├── stats.service.ts
+│       ├── stats.service.test.ts
 │       ├── stats.controller.ts
 │       └── stats.routes.ts
 ├── types/
 │   └── fastify.d.ts        # Augmentación de tipos: FastifyInstance.prisma, authenticate
+├── utils/
+│   └── pagination.ts       # calcPaginationParams() y formatPaginatedResponse()
 ├── app.ts                  # buildApp() — registra plugins, middleware y rutas
 └── server.ts               # Entrypoint — listen + graceful shutdown (SIGINT/SIGTERM)
 ```
@@ -91,10 +97,29 @@ Cada módulo sigue la cadena: `schema.ts -> repository.ts -> service.ts -> contr
 
 Manual, sin framework DI. Las routes instancian toda la cadena:
 
+**Simple (Guest, Table):**
 ```typescript
 const repository = new GuestRepository(fastify.prisma);
 const service = new GuestService(repository);
 const controller = new GuestController(service);
+```
+
+**Cross-service (Invitation — depende de TableService para validación de capacidad):**
+```typescript
+const repository = new InvitationRepository(fastify.prisma);
+const tableRepository = new TableRepository(fastify.prisma);
+const tableService = new TableService(tableRepository);
+const service = new InvitationService(repository, fastify.prisma, tableService);
+const controller = new InvitationController(service);
+```
+
+**Stats (depende de repository + service de otros módulos):**
+```typescript
+const invitationRepository = new InvitationRepository(fastify.prisma);
+const tableRepository = new TableRepository(fastify.prisma);
+const tableService = new TableService(tableRepository);
+const statsService = new StatsService(invitationRepository, tableService);
+const controller = new StatsController(statsService);
 ```
 
 ## Módulos
@@ -163,10 +188,11 @@ Gestión de invitaciones de boda.
 **Reglas de negocio:**
 - Nombre único: no se permite crear invitación con nombre duplicado
 - OperationId único: si se provee, no puede estar duplicado
-- Si se asigna `tableId`, se valida que la mesa tenga capacidad disponible
+- Si se asigna `tableId`, se delega validación de capacidad a `TableService.validateTableCapacity()`. Si se proporciona `tableId` sin `tableService` inyectado, lanza `InternalError` (fail-fast).
 - `createInvitationWithGuests`: transacción atómica que crea invitación + N guests. Si falla alguno, se revierte todo.
-- Dashboard stats: calcula totales de invitados por status y días hasta la boda
 - Paginación opcional con `page` y `limit` (max 100)
+
+**Constructor:** `InvitationService(repository, prisma?, tableService?)`
 
 ### Tables
 
@@ -186,6 +212,7 @@ Gestión de mesas del evento.
 - No se puede reducir la capacidad por debajo del número actual de guests
 - Capacidad por defecto: 8
 - Estadísticas calculadas: guestCount, available (capacidad - guests)
+- `validateTableCapacity(tableId, additionalGuests)` es el único punto de validación de capacidad. InvitationService delega a este método (sin duplicación).
 
 ### Stats
 
@@ -195,7 +222,9 @@ Estadísticas del dashboard y mesas.
 - `GET /api/v1/stats/dashboard` — Estadísticas generales (totales, confirmados, pendientes, declinados, días hasta boda)
 - `GET /api/v1/stats/tables` — Estadísticas de mesas (capacidad, ocupación, disponibilidad)
 
-**Nota:** El módulo stats no tiene repository propio; usa InvitationService y TableService.
+**StatsService:** `getDashboardStats()` (movido desde InvitationService) y `getTableStats()` (lógica movida desde StatsController). StatsController solo recibe StatsService y delega.
+
+**Nota:** Stats tiene StatsService propio que depende de InvitationRepository y TableService. No tiene repository propio.
 
 ## Modelos de Datos
 
@@ -248,13 +277,15 @@ User (users)
 - Al eliminar una Table, las Invitations mantienen su registro pero `tableId` se pone en `null` (comportamiento implícito de Prisma)
 - Las validaciones de unicidad por nombre y operationId se hacen a nivel de aplicación, NO a nivel de base de datos (excepto Table.name que tiene constraint UNIQUE en DB)
 
+**Campos YAGNI:** Los siguientes campos tienen `// TODO: evaluar remoción si no se usa en frontend` en sus schemas: `operationId` (guests, invitations), `qrCode` (invitations), `location` (tables).
+
 ## Reglas de Negocio Críticas
 
 > **ESTAS REGLAS NO SE DEBEN MODIFICAR SIN ANÁLISIS DE IMPACTO PREVIO**
 
 1. **Unicidad por nombre** en guests, invitations y tables (case-sensitive, nivel de aplicación)
 2. **Unicidad por operationId** en guests e invitations (nivel de aplicación)
-3. **Validación de capacidad de mesa** antes de asignar invitaciones (compara guest count vs capacity)
+3. **Validación de capacidad de mesa** antes de asignar invitaciones — unificada en `TableService.validateTableCapacity()` (compara guest count vs capacity)
 4. **No eliminar mesas con invitaciones asignadas** (TableService.deleteTable)
 5. **No reducir capacidad por debajo del guest count actual** (TableService.updateTable)
 6. **Transacción atómica** para crear invitación con guests (InvitationService.createInvitationWithGuests)
@@ -271,7 +302,7 @@ User (users)
 - Repositorios reciben `PrismaClient`, services reciben repositories
 - Controllers reciben services
 - Routes instancian la cadena de dependencias
-- Errores en services: `throw new Error('mensaje')` (el error handler mapea mensajes conocidos a status codes HTTP)
+- Errores en services: usar factories de `AppError` (`NotFoundError`, `ConflictError`, `UnauthorizedError`, `InternalError`) desde `src/errors/app-error.ts`. El error handler detecta `instanceof AppError` y usa su `statusCode` directamente. Nunca usar `throw new Error(...)` en services.
 - Logs con Pino (integrado en Fastify)
 - Sin ESLint/Prettier configurado actualmente
 
@@ -317,8 +348,8 @@ User (users)
 - **Framework:** Vitest ^4.0.12
 - **Patrón:** Mocks manuales de repository con `vi.fn()` para unit tests de services
 - **Ubicación:** Colocados junto al código (`modulo.service.test.ts`)
-- **Cobertura actual:** 3 de 5 módulos tienen tests (auth, guests y invitations)
-- **Módulos sin tests:** tables, stats
+- **Cobertura actual:** 4 de 5 módulos tienen tests (auth, guests, invitations, stats)
+- **Módulos sin tests:** tables
 - **Ejecutar antes de cada PR:** `npm run test:run`
 - **Config:** `vitest.config.ts` con coverage v8
 
