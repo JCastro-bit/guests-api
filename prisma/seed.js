@@ -1,7 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 
-const BCRYPT_ROUNDS = 10;
+const parsedRounds = parseInt(process.env.BCRYPT_ROUNDS || '10', 10);
+const BCRYPT_ROUNDS = Number.isNaN(parsedRounds) || parsedRounds < 4 || parsedRounds > 31 ? 10 : parsedRounds;
 
 async function main() {
   const email = process.env.ADMIN_EMAIL;
@@ -33,7 +34,11 @@ async function main() {
 
     console.log(`Admin user seeded: ${admin.email} (${admin.id})`);
   } finally {
-    await prisma.$disconnect();
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error('Error during Prisma disconnect in seed:', disconnectError);
+    }
   }
 }
 
