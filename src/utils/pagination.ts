@@ -7,7 +7,7 @@ export interface PaginatedResult<T> {
 
 export function calcPaginationParams(page?: number, limit?: number): { skip?: number; take?: number } {
   const skip = page && limit ? (page - 1) * limit : undefined;
-  const take = limit;
+  const take = page && limit ? limit : undefined;
   return { skip, take };
 }
 

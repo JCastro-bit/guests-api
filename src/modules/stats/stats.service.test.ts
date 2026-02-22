@@ -126,5 +126,33 @@ describe('StatsService', () => {
       expect(result.totalAvailable).toBe(0);
       expect(result.tables).toHaveLength(0);
     });
+
+    it('should handle paginated table response from getAllTables', async () => {
+      const tables = [
+        {
+          id: '1',
+          name: 'Mesa 1',
+          capacity: 10,
+          location: 'Salón A',
+          notes: null,
+          createdAt: new Date().toISOString(),
+          guestCount: 6,
+          available: 4,
+          invitationCount: 3,
+        },
+      ];
+
+      const paginatedResponse = { data: tables, total: 1, page: 1, limit: 10 };
+      vi.mocked(mockTableService.getAllTables).mockResolvedValue(paginatedResponse as any);
+
+      const result = await service.getTableStats();
+
+      expect(result.totalTables).toBe(1);
+      expect(result.totalCapacity).toBe(10);
+      expect(result.totalOccupied).toBe(6);
+      expect(result.totalAvailable).toBe(4);
+      expect(result.tables).toHaveLength(1);
+      expect(result.tables[0].invitationCount).toBe(3);
+    });
   });
 });

@@ -1,5 +1,17 @@
 import { InvitationRepository } from '../invitations/invitation.repository';
 import { TableService } from '../tables/table.service';
+import { TableStatsItem, TableStats } from './stats.schema';
+import { PaginatedResult } from '../../utils/pagination';
+
+interface TableWithStatsData {
+  id: string;
+  name: string;
+  capacity: number;
+  location: string | null;
+  guestCount: number;
+  available: number;
+  invitationCount: number;
+}
 
 export class StatsService {
   constructor(
@@ -25,15 +37,17 @@ export class StatsService {
     };
   }
 
-  async getTableStats() {
+  async getTableStats(): Promise<TableStats> {
     const tables = await this.tableService.getAllTables();
-    const tablesArray = Array.isArray(tables) ? tables : tables.data;
+    const tablesArray: TableWithStatsData[] = Array.isArray(tables)
+      ? (tables as TableWithStatsData[])
+      : (tables as PaginatedResult<TableWithStatsData>).data;
 
-    const totalCapacity = tablesArray.reduce((sum: number, table: any) => sum + table.capacity, 0);
-    const totalOccupied = tablesArray.reduce((sum: number, table: any) => sum + table.guestCount, 0);
+    const totalCapacity = tablesArray.reduce((sum, table) => sum + table.capacity, 0);
+    const totalOccupied = tablesArray.reduce((sum, table) => sum + table.guestCount, 0);
     const totalAvailable = totalCapacity - totalOccupied;
 
-    const tableStats = tablesArray.map((table: any) => ({
+    const tableStats: TableStatsItem[] = tablesArray.map((table) => ({
       id: table.id,
       name: table.name,
       capacity: table.capacity,
