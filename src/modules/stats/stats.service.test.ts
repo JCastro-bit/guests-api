@@ -79,6 +79,7 @@ describe('StatsService', () => {
           createdAt: new Date().toISOString(),
           guestCount: 6,
           available: 4,
+          invitationCount: 3,
         },
         {
           id: '2',
@@ -89,6 +90,7 @@ describe('StatsService', () => {
           createdAt: new Date().toISOString(),
           guestCount: 3,
           available: 5,
+          invitationCount: 1,
         },
       ];
 
@@ -109,7 +111,7 @@ describe('StatsService', () => {
         location: 'Salón A',
         guestCount: 6,
         available: 4,
-        invitationCount: 0,
+        invitationCount: 3,
       });
     });
 

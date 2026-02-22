@@ -29,7 +29,10 @@ export class InvitationService {
     }
 
     // Validar capacidad de la mesa si se proporciona tableId
-    if (data.tableId && this.tableService) {
+    if (data.tableId) {
+      if (!this.tableService) {
+        throw InternalError('TableService is required for table capacity validation');
+      }
       await this.tableService.validateTableCapacity(data.tableId, 0);
     }
 
@@ -59,7 +62,10 @@ export class InvitationService {
     }
 
     // Validar capacidad de la mesa si se proporciona tableId
-    if (invitationData.tableId && this.tableService) {
+    if (invitationData.tableId) {
+      if (!this.tableService) {
+        throw InternalError('TableService is required for table capacity validation');
+      }
       await this.tableService.validateTableCapacity(invitationData.tableId, guestsData.length);
     }
 
@@ -114,15 +120,16 @@ export class InvitationService {
     const invitation = await this.getInvitationById(id);
 
     // Si se está actualizando el tableId, validar capacidad
-    if (data.tableId !== undefined && this.tableService) {
-      if (data.tableId) {
-        // Contar los invitados de esta invitación
-        const guestCount = invitation.guests?.length || 0;
+    if (data.tableId !== undefined && data.tableId) {
+      if (!this.tableService) {
+        throw InternalError('TableService is required for table capacity validation');
+      }
+      // Contar los invitados de esta invitación
+      const guestCount = invitation.guests?.length || 0;
 
-        // Si está cambiando de mesa, validar la nueva mesa
-        if (data.tableId !== invitation.tableId) {
-          await this.tableService.validateTableCapacity(data.tableId, guestCount);
-        }
+      // Si está cambiando de mesa, validar la nueva mesa
+      if (data.tableId !== invitation.tableId) {
+        await this.tableService.validateTableCapacity(data.tableId, guestCount);
       }
     }
 

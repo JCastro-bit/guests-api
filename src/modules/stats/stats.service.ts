@@ -16,7 +16,7 @@ export class StatsService {
       const today = new Date();
       const eventDate = new Date(mostRecentEventDate);
       const diffTime = eventDate.getTime() - today.getTime();
-      daysUntilWedding = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      daysUntilWedding = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
     }
 
     return {
@@ -40,7 +40,7 @@ export class StatsService {
       location: table.location,
       guestCount: table.guestCount,
       available: table.available,
-      invitationCount: 0,
+      invitationCount: table.invitationCount ?? 0,
     }));
 
     return {
