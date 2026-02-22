@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { StatsController } from './stats.controller';
-import { InvitationService } from '../invitations/invitation.service';
+import { StatsService } from './stats.service';
 import { InvitationRepository } from '../invitations/invitation.repository';
 import { TableService } from '../tables/table.service';
 import { TableRepository } from '../tables/table.repository';
@@ -8,12 +8,12 @@ import { DashboardStatsSchema, TableStatsSchema } from './stats.schema';
 
 const statsRoutes: FastifyPluginAsync = async (fastify) => {
   const invitationRepository = new InvitationRepository(fastify.prisma);
-  const invitationService = new InvitationService(invitationRepository, fastify.prisma);
 
   const tableRepository = new TableRepository(fastify.prisma);
   const tableService = new TableService(tableRepository);
 
-  const controller = new StatsController(invitationService, tableService);
+  const statsService = new StatsService(invitationRepository, tableService);
+  const controller = new StatsController(statsService);
 
   fastify.get('/dashboard', {
     schema: {

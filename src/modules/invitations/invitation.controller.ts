@@ -37,11 +37,6 @@ export class InvitationController {
     return reply.send(invitations);
   }
 
-  async getDashboardStats(request: FastifyRequest, reply: FastifyReply) {
-    const stats = await this.service.getDashboardStats();
-    return reply.send(stats);
-  }
-
   async getById(
     request: FastifyRequest<{ Params: InvitationParams }>,
     reply: FastifyReply

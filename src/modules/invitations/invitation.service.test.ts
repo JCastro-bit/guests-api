@@ -349,48 +349,4 @@ describe('InvitationService', () => {
     });
   });
 
-  describe('getDashboardStats', () => {
-    it('should return dashboard statistics with days until wedding', async () => {
-      const statsData = {
-        totalInvitations: 50,
-        totalGuests: 150,
-        confirmed: 100,
-        pending: 30,
-        declined: 20,
-      };
-
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 30);
-
-      vi.mocked(mockRepository.getStatsCounts).mockResolvedValue(statsData);
-      vi.mocked(mockRepository.getMostRecentEventDate).mockResolvedValue(futureDate);
-
-      const result = await service.getDashboardStats();
-
-      expect(mockRepository.getStatsCounts).toHaveBeenCalled();
-      expect(mockRepository.getMostRecentEventDate).toHaveBeenCalled();
-      expect(result).toEqual({
-        ...statsData,
-        daysUntilWedding: expect.any(Number),
-      });
-      expect(result.daysUntilWedding).toBeGreaterThan(0);
-    });
-
-    it('should return 0 days when no event date exists', async () => {
-      const statsData = {
-        totalInvitations: 50,
-        totalGuests: 150,
-        confirmed: 100,
-        pending: 30,
-        declined: 20,
-      };
-
-      vi.mocked(mockRepository.getStatsCounts).mockResolvedValue(statsData);
-      vi.mocked(mockRepository.getMostRecentEventDate).mockResolvedValue(null);
-
-      const result = await service.getDashboardStats();
-
-      expect(result.daysUntilWedding).toBe(0);
-    });
-  });
 });

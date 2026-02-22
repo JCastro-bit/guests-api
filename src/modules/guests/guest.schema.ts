@@ -15,7 +15,7 @@ export const GuestSchema = Type.Object({
   email: Type.Union([Type.String(), Type.Null()]),
   status: StatusEnum,
   invitationId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
-  operationId: Type.Union([Type.String(), Type.Null()]),
+  operationId: Type.Union([Type.String(), Type.Null()]), // TODO: evaluar remoción si no se usa en frontend
   createdAt: Type.String({ format: 'date-time' }),
 });
 

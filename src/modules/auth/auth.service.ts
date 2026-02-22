@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { AuthRepository } from './auth.repository';
 import { RegisterBody, LoginBody } from './auth.schema';
+import { ConflictError, UnauthorizedError, NotFoundError } from '../../errors/app-error';
 
 const parsedRounds = parseInt(process.env.BCRYPT_ROUNDS || '10', 10);
 const BCRYPT_ROUNDS = Number.isNaN(parsedRounds) || parsedRounds < 4 || parsedRounds > 31 ? 10 : parsedRounds;
@@ -20,7 +21,7 @@ export class AuthService {
     // Verificar si el email ya existe
     const existing = await this.repository.findByEmail(data.email);
     if (existing) {
-      throw new Error('Email already registered');
+      throw ConflictError('Email already registered');
     }
 
     // Hashear password
@@ -48,7 +49,7 @@ export class AuthService {
       : await bcrypt.compare(data.password, dummyHash).then(() => false);
 
     if (!user || !isValid) {
-      throw new Error('Invalid email or password');
+      throw UnauthorizedError('Invalid email or password');
     }
 
     return this.toSafeUser(user);
@@ -57,7 +58,7 @@ export class AuthService {
   async getProfile(userId: string): Promise<SafeUser> {
     const user = await this.repository.findById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw NotFoundError('User');
     }
 
     return this.toSafeUser(user);
