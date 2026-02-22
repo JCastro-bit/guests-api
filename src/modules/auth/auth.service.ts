@@ -2,7 +2,8 @@ import bcrypt from 'bcrypt';
 import { AuthRepository } from './auth.repository';
 import { RegisterBody, LoginBody } from './auth.schema';
 
-const BCRYPT_ROUNDS = 10;
+const parsedRounds = parseInt(process.env.BCRYPT_ROUNDS || '10', 10);
+const BCRYPT_ROUNDS = Number.isNaN(parsedRounds) || parsedRounds < 4 || parsedRounds > 31 ? 10 : parsedRounds;
 
 interface SafeUser {
   id: string;
