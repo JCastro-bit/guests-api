@@ -122,9 +122,12 @@ Autenticación de usuarios con JWT.
 
 **Super Admin Seed:**
 - Se configura con `ADMIN_EMAIL` y `ADMIN_PASSWORD` en variables de entorno
-- Se ejecuta con `npx prisma db seed`
+- Se ejecuta automáticamente en cada deploy (via `docker-entrypoint.sh`)
+- También se puede ejecutar manualmente: `npx prisma db seed` (dev) o `node prisma/seed.js` (producción)
 - Si las variables no están definidas, el seed se salta sin error
 - Usa upsert: seguro de ejecutar múltiples veces
+- El seed es un archivo `.js` (no `.ts`) para funcionar en producción sin `tsx`
+- Usa `bcrypt` (misma librería que auth.service.ts, NO bcryptjs)
 
 ### Guests
 
@@ -298,6 +301,8 @@ User (users)
 | ADMIN_EMAIL | Email del super admin (seed) | admin@lovepostal.studio |
 | ADMIN_PASSWORD | Password del super admin (seed) | (vacío = skip seed) |
 
+> **Nota:** Si `ADMIN_PASSWORD` contiene `#`, el valor debe ir entre comillas dobles en el archivo de variables de entorno (ej: `ADMIN_PASSWORD="Pass#123"`), ya que `#` es interpretado como inicio de comentario y trunca el valor.
+
 ## Swagger/OpenAPI
 
 - **URL local:** http://localhost:3000/docs
@@ -349,8 +354,9 @@ Build multi-stage con 2 etapas:
 ### Entrypoint (`docker-entrypoint.sh`)
 
 1. Ejecuta `prisma migrate deploy` (aplica migraciones pendientes, seguro para producción)
-2. Inicia el servidor con `exec node dist/server.js` (PID 1 para graceful shutdown)
-3. Si la migración falla, el contenedor falla (`set -e`)
+2. Ejecuta `node prisma/seed.js` (crea/actualiza admin user, idempotente con upsert)
+3. Inicia el servidor con `exec node dist/server.js` (PID 1 para graceful shutdown)
+4. Si la migración o el seed fallan, el contenedor falla (`set -e`). Si ADMIN_EMAIL/ADMIN_PASSWORD no están definidos, el seed se salta sin error.
 
 ### Configuración Dokploy
 

@@ -79,6 +79,8 @@ npm run prisma:migrate
 | `ADMIN_EMAIL` | Email del admin para seed | `admin@lovepostal.studio` |
 | `ADMIN_PASSWORD` | Password del admin para seed | (vacío = skip) |
 
+> **Nota:** Si el password contiene `#`, usa comillas dobles: `ADMIN_PASSWORD="Pass#123"`. Sin comillas, `#` trunca el valor.
+
 ## Scripts Disponibles
 
 - `npm run dev` - Inicia el servidor en modo desarrollo con hot-reload
@@ -175,4 +177,5 @@ npm run test:ui
 - Logs estructurados con Pino
 - CORS y Helmet configurados
 - Graceful shutdown
+- Admin seed automático en deploy (idempotente)
 - Arquitectura escalable y mantenible
