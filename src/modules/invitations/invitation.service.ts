@@ -13,77 +13,72 @@ export class InvitationService {
     private tableService?: TableService
   ) {}
 
-  async createInvitation(data: CreateInvitation) {
-    // Verificar duplicado por nombre
-    const existingByName = await this.repository.findByName(data.name);
+  async createInvitation(data: CreateInvitation, userId: string) {
+    const existingByName = await this.repository.findByName(data.name, userId);
     if (existingByName) {
       throw ConflictError('Invitation with this name already exists');
     }
 
-    // Verificar duplicado por operationId si existe
     if (data.operationId) {
-      const existingByOperationId = await this.repository.findByOperationId(data.operationId);
+      const existingByOperationId = await this.repository.findByOperationId(data.operationId, userId);
       if (existingByOperationId) {
         throw ConflictError('Invitation with this operationId already exists');
       }
     }
 
-    // Validar capacidad de la mesa si se proporciona tableId
     if (data.tableId) {
       if (!this.tableService) {
         throw InternalError('TableService is required for table capacity validation');
       }
-      await this.tableService.validateTableCapacity(data.tableId, 0);
+      await this.tableService.validateTableCapacity(data.tableId, userId, 0);
     }
 
-    return this.repository.create(data);
+    return this.repository.create(data, userId);
   }
 
   async createInvitationWithGuests(
     invitationData: CreateInvitation,
-    guestsData: CreateGuest[]
+    guestsData: CreateGuest[],
+    userId: string
   ) {
     if (!this.prisma) {
       throw InternalError('PrismaClient is required for transaction operations');
     }
 
-    // Verificar duplicado por nombre
-    const existingByName = await this.repository.findByName(invitationData.name);
+    const existingByName = await this.repository.findByName(invitationData.name, userId);
     if (existingByName) {
       throw ConflictError('Invitation with this name already exists');
     }
 
-    // Verificar duplicado por operationId si existe
     if (invitationData.operationId) {
-      const existingByOperationId = await this.repository.findByOperationId(invitationData.operationId);
+      const existingByOperationId = await this.repository.findByOperationId(invitationData.operationId, userId);
       if (existingByOperationId) {
         throw ConflictError('Invitation with this operationId already exists');
       }
     }
 
-    // Validar capacidad de la mesa si se proporciona tableId
     if (invitationData.tableId) {
       if (!this.tableService) {
         throw InternalError('TableService is required for table capacity validation');
       }
-      await this.tableService.validateTableCapacity(invitationData.tableId, guestsData.length);
+      await this.tableService.validateTableCapacity(invitationData.tableId, userId, guestsData.length);
     }
 
-    return this.prisma.$transaction(async (tx: any) => {
-      // Crear la invitación
+    return this.prisma.$transaction(async (tx) => {
       const invitation = await tx.invitation.create({
         data: {
           ...invitationData,
+          userId,
           eventDate: invitationData.eventDate ? new Date(invitationData.eventDate) : null,
         },
       });
 
-      // Crear los guests asociados
       const guests = await Promise.all(
         guestsData.map((guestData) =>
           tx.guest.create({
             data: {
               ...guestData,
+              userId,
               invitationId: invitation.id,
             },
           })
@@ -97,47 +92,44 @@ export class InvitationService {
     });
   }
 
-  async getAllInvitations(page?: number, limit?: number) {
+  async getAllInvitations(userId: string, page?: number, limit?: number) {
     const { skip, take } = calcPaginationParams(page, limit);
 
     const [data, total] = await Promise.all([
-      this.repository.findAll(skip, take),
-      this.repository.count(),
+      this.repository.findAll(userId, skip, take),
+      this.repository.count(userId),
     ]);
 
     return formatPaginatedResponse(data, total, page, limit);
   }
 
-  async getInvitationById(id: string) {
-    const invitation = await this.repository.findById(id);
+  async getInvitationById(id: string, userId: string) {
+    const invitation = await this.repository.findById(id, userId);
     if (!invitation) {
       throw NotFoundError('Invitation');
     }
     return invitation;
   }
 
-  async updateInvitation(id: string, data: UpdateInvitation) {
-    const invitation = await this.getInvitationById(id);
+  async updateInvitation(id: string, userId: string, data: UpdateInvitation) {
+    const invitation = await this.getInvitationById(id, userId);
 
-    // Si se está actualizando el tableId, validar capacidad
     if (data.tableId !== undefined && data.tableId) {
       if (!this.tableService) {
         throw InternalError('TableService is required for table capacity validation');
       }
-      // Contar los invitados de esta invitación
       const guestCount = invitation.guests?.length || 0;
 
-      // Si está cambiando de mesa, validar la nueva mesa
       if (data.tableId !== invitation.tableId) {
-        await this.tableService.validateTableCapacity(data.tableId, guestCount);
+        await this.tableService.validateTableCapacity(data.tableId, userId, guestCount);
       }
     }
 
     return this.repository.update(id, data);
   }
 
-  async deleteInvitation(id: string) {
-    await this.getInvitationById(id);
+  async deleteInvitation(id: string, userId: string) {
+    await this.getInvitationById(id, userId);
     return this.repository.delete(id);
   }
 }

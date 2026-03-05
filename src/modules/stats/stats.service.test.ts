@@ -14,6 +14,8 @@ const mockTableService = {
   getAllTables: vi.fn(),
 } as unknown as TableService;
 
+const userId = 'user-123';
+
 describe('StatsService', () => {
   let service: StatsService;
 
@@ -38,10 +40,10 @@ describe('StatsService', () => {
       vi.mocked(mockInvitationRepository.getStatsCounts).mockResolvedValue(statsData);
       vi.mocked(mockInvitationRepository.getMostRecentEventDate).mockResolvedValue(futureDate);
 
-      const result = await service.getDashboardStats();
+      const result = await service.getDashboardStats(userId);
 
-      expect(mockInvitationRepository.getStatsCounts).toHaveBeenCalled();
-      expect(mockInvitationRepository.getMostRecentEventDate).toHaveBeenCalled();
+      expect(mockInvitationRepository.getStatsCounts).toHaveBeenCalledWith(userId);
+      expect(mockInvitationRepository.getMostRecentEventDate).toHaveBeenCalledWith(userId);
       expect(result).toEqual({
         ...statsData,
         daysUntilWedding: expect.any(Number),
@@ -61,7 +63,7 @@ describe('StatsService', () => {
       vi.mocked(mockInvitationRepository.getStatsCounts).mockResolvedValue(statsData);
       vi.mocked(mockInvitationRepository.getMostRecentEventDate).mockResolvedValue(null);
 
-      const result = await service.getDashboardStats();
+      const result = await service.getDashboardStats(userId);
 
       expect(result.daysUntilWedding).toBe(0);
     });
@@ -96,9 +98,9 @@ describe('StatsService', () => {
 
       vi.mocked(mockTableService.getAllTables).mockResolvedValue(tables);
 
-      const result = await service.getTableStats();
+      const result = await service.getTableStats(userId);
 
-      expect(mockTableService.getAllTables).toHaveBeenCalled();
+      expect(mockTableService.getAllTables).toHaveBeenCalledWith(userId);
       expect(result.totalTables).toBe(2);
       expect(result.totalCapacity).toBe(18);
       expect(result.totalOccupied).toBe(9);
@@ -118,7 +120,7 @@ describe('StatsService', () => {
     it('should handle empty tables array', async () => {
       vi.mocked(mockTableService.getAllTables).mockResolvedValue([]);
 
-      const result = await service.getTableStats();
+      const result = await service.getTableStats(userId);
 
       expect(result.totalTables).toBe(0);
       expect(result.totalCapacity).toBe(0);
@@ -145,7 +147,7 @@ describe('StatsService', () => {
       const paginatedResponse = { data: tables, total: 1, page: 1, limit: 10 };
       vi.mocked(mockTableService.getAllTables).mockResolvedValue(paginatedResponse as any);
 
-      const result = await service.getTableStats();
+      const result = await service.getTableStats(userId);
 
       expect(result.totalTables).toBe(1);
       expect(result.totalCapacity).toBe(10);

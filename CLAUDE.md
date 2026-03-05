@@ -88,7 +88,7 @@ prisma/
 - **Framework:** Vitest ^4.0.12 con globals habilitados y coverage v8
 - **Ubicacion:** colocados junto al codigo (`modulo.service.test.ts`)
 - **Patron:** mocks manuales de repository con `vi.fn()`, estructura AAA (Arrange-Act-Assert)
-- **Cobertura:** 4/5 modulos con tests (auth, guests, invitations, stats). Falta: tables
+- **Cobertura:** 5/5 modulos con tests (auth, guests, invitations, tables, stats)
 - **Regla:** todo service nuevo DEBE tener tests unitarios
 - **Ejecutar:** `npm run test:run` antes de cada PR
 
@@ -103,6 +103,8 @@ prisma/
 5. No reducir capacidad por debajo del guest count actual
 6. Transaccion atomica para crear invitacion con guests
 7. `onDelete: SetNull` para guests (eliminar invitation) e invitations (eliminar table)
+8. Soft delete implementado en guests, invitations, tables (campo `deletedAt`, todas las queries filtran `deletedAt: null`)
+9. Multi-tenant: todos los modelos de datos (Table, Invitation, Guest) tienen `userId` FK — todas las queries filtran por userId
 
 ## Limites y seguridad
 

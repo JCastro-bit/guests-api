@@ -14,6 +14,8 @@ import {
 import { Type } from '@sinclair/typebox';
 
 const tableRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('onRequest', fastify.authenticate);
+
   const repository = new TableRepository(fastify.prisma);
   const service = new TableService(repository);
   const controller = new TableController(service);

@@ -7,6 +7,8 @@ import { TableRepository } from '../tables/table.repository';
 import { DashboardStatsSchema, TableStatsSchema } from './stats.schema';
 
 const statsRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('onRequest', fastify.authenticate);
+
   const invitationRepository = new InvitationRepository(fastify.prisma);
 
   const tableRepository = new TableRepository(fastify.prisma);

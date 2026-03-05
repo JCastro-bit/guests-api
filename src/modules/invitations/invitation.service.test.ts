@@ -34,6 +34,8 @@ const mockTableService = {
   validateTableCapacity: vi.fn(),
 } as unknown as import('../tables/table.service').TableService;
 
+const userId = 'user-123';
+
 describe('InvitationService', () => {
   let service: InvitationService;
 
@@ -63,10 +65,10 @@ describe('InvitationService', () => {
       vi.mocked(mockRepository.findByName).mockResolvedValue(null);
       vi.mocked(mockRepository.create).mockResolvedValue(expectedInvitation);
 
-      const result = await service.createInvitation(createData);
+      const result = await service.createInvitation(createData, userId);
 
-      expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family');
-      expect(mockRepository.create).toHaveBeenCalledWith(createData);
+      expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family', userId);
+      expect(mockRepository.create).toHaveBeenCalledWith(createData, userId);
       expect(result).toEqual(expectedInvitation);
     });
 
@@ -89,11 +91,11 @@ describe('InvitationService', () => {
 
       vi.mocked(mockRepository.findByName).mockResolvedValue(existingInvitation);
 
-      await expect(service.createInvitation(createData)).rejects.toThrow(
+      await expect(service.createInvitation(createData, userId)).rejects.toThrow(
         'Invitation with this name already exists'
       );
 
-      expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family');
+      expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family', userId);
       expect(mockRepository.create).not.toHaveBeenCalled();
     });
 
@@ -118,12 +120,12 @@ describe('InvitationService', () => {
       vi.mocked(mockRepository.findByName).mockResolvedValue(null);
       vi.mocked(mockRepository.findByOperationId).mockResolvedValue(existingInvitation);
 
-      await expect(service.createInvitation(createData)).rejects.toThrow(
+      await expect(service.createInvitation(createData, userId)).rejects.toThrow(
         'Invitation with this operationId already exists'
       );
 
-      expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family');
-      expect(mockRepository.findByOperationId).toHaveBeenCalledWith('OP123');
+      expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family', userId);
+      expect(mockRepository.findByOperationId).toHaveBeenCalledWith('OP123', userId);
       expect(mockRepository.create).not.toHaveBeenCalled();
     });
 
@@ -150,10 +152,10 @@ describe('InvitationService', () => {
       vi.mocked(mockTableService.validateTableCapacity).mockResolvedValue(undefined);
       vi.mocked(mockRepository.create).mockResolvedValue(expectedInvitation);
 
-      const result = await serviceWithTable.createInvitation(createData);
+      const result = await serviceWithTable.createInvitation(createData, userId);
 
-      expect(mockTableService.validateTableCapacity).toHaveBeenCalledWith('table-1', 0);
-      expect(mockRepository.create).toHaveBeenCalledWith(createData);
+      expect(mockTableService.validateTableCapacity).toHaveBeenCalledWith('table-1', userId, 0);
+      expect(mockRepository.create).toHaveBeenCalledWith(createData, userId);
       expect(result).toEqual(expectedInvitation);
     });
 
@@ -167,7 +169,7 @@ describe('InvitationService', () => {
 
       vi.mocked(mockRepository.findByName).mockResolvedValue(null);
 
-      await expect(serviceWithoutTable.createInvitation(createData)).rejects.toThrow(
+      await expect(serviceWithoutTable.createInvitation(createData, userId)).rejects.toThrow(
         'TableService is required for table capacity validation'
       );
 
@@ -237,9 +239,9 @@ describe('InvitationService', () => {
         } as any);
       });
 
-      const result = await service.createInvitationWithGuests(invitationData, guestsData);
+      const result = await service.createInvitationWithGuests(invitationData, guestsData, userId);
 
-      expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family');
+      expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family', userId);
       expect(mockPrisma.$transaction).toHaveBeenCalled();
       expect(result.id).toBe('123');
       expect(result.guests).toHaveLength(2);
@@ -251,7 +253,8 @@ describe('InvitationService', () => {
       await expect(
         serviceWithoutPrisma.createInvitationWithGuests(
           { name: 'Test' },
-          [{ name: 'Guest', side: 'groom' }]
+          [{ name: 'Guest', side: 'groom' }],
+          userId
         )
       ).rejects.toThrow('PrismaClient is required for transaction operations');
     });
@@ -276,9 +279,9 @@ describe('InvitationService', () => {
       vi.mocked(mockRepository.findAll).mockResolvedValue(invitations);
       vi.mocked(mockRepository.count).mockResolvedValue(1);
 
-      const result = await service.getAllInvitations();
+      const result = await service.getAllInvitations(userId);
 
-      expect(mockRepository.findAll).toHaveBeenCalledWith(undefined, undefined);
+      expect(mockRepository.findAll).toHaveBeenCalledWith(userId, undefined, undefined);
       expect(result).toEqual(invitations);
     });
 
@@ -300,9 +303,9 @@ describe('InvitationService', () => {
       vi.mocked(mockRepository.findAll).mockResolvedValue(invitations);
       vi.mocked(mockRepository.count).mockResolvedValue(100);
 
-      const result = await service.getAllInvitations(1, 50);
+      const result = await service.getAllInvitations(userId, 1, 50);
 
-      expect(mockRepository.findAll).toHaveBeenCalledWith(0, 50);
+      expect(mockRepository.findAll).toHaveBeenCalledWith(userId, 0, 50);
       expect(result).toEqual({
         data: invitations,
         total: 100,
@@ -328,16 +331,16 @@ describe('InvitationService', () => {
 
       vi.mocked(mockRepository.findById).mockResolvedValue(invitation);
 
-      const result = await service.getInvitationById('123');
+      const result = await service.getInvitationById('123', userId);
 
-      expect(mockRepository.findById).toHaveBeenCalledWith('123');
+      expect(mockRepository.findById).toHaveBeenCalledWith('123', userId);
       expect(result).toEqual(invitation);
     });
 
     it('should throw error when invitation not found', async () => {
       vi.mocked(mockRepository.findById).mockResolvedValue(null);
 
-      await expect(service.getInvitationById('999')).rejects.toThrow(
+      await expect(service.getInvitationById('999', userId)).rejects.toThrow(
         'Invitation not found'
       );
     });
@@ -369,9 +372,9 @@ describe('InvitationService', () => {
       vi.mocked(mockRepository.findById).mockResolvedValue(existingInvitation);
       vi.mocked(mockRepository.update).mockResolvedValue(updatedInvitation);
 
-      const result = await service.updateInvitation('123', updateData);
+      const result = await service.updateInvitation('123', userId, updateData);
 
-      expect(mockRepository.findById).toHaveBeenCalledWith('123');
+      expect(mockRepository.findById).toHaveBeenCalledWith('123', userId);
       expect(mockRepository.update).toHaveBeenCalledWith('123', updateData);
       expect(result).toEqual(updatedInvitation);
     });
@@ -399,9 +402,9 @@ describe('InvitationService', () => {
       vi.mocked(mockTableService.validateTableCapacity).mockResolvedValue(undefined);
       vi.mocked(mockRepository.update).mockResolvedValue(updatedInvitation);
 
-      const result = await serviceWithTable.updateInvitation('123', updateData);
+      const result = await serviceWithTable.updateInvitation('123', userId, updateData);
 
-      expect(mockTableService.validateTableCapacity).toHaveBeenCalledWith('new-table', 2);
+      expect(mockTableService.validateTableCapacity).toHaveBeenCalledWith('new-table', userId, 2);
       expect(mockRepository.update).toHaveBeenCalledWith('123', updateData);
       expect(result).toEqual(updatedInvitation);
     });
@@ -425,7 +428,7 @@ describe('InvitationService', () => {
 
       vi.mocked(mockRepository.findById).mockResolvedValue(existingInvitation);
 
-      await expect(serviceWithoutTable.updateInvitation('123', updateData)).rejects.toThrow(
+      await expect(serviceWithoutTable.updateInvitation('123', userId, updateData)).rejects.toThrow(
         'TableService is required for table capacity validation'
       );
 
@@ -450,9 +453,9 @@ describe('InvitationService', () => {
       vi.mocked(mockRepository.findById).mockResolvedValue(existingInvitation);
       vi.mocked(mockRepository.delete).mockResolvedValue(existingInvitation);
 
-      await service.deleteInvitation('123');
+      await service.deleteInvitation('123', userId);
 
-      expect(mockRepository.findById).toHaveBeenCalledWith('123');
+      expect(mockRepository.findById).toHaveBeenCalledWith('123', userId);
       expect(mockRepository.delete).toHaveBeenCalledWith('123');
     });
   });

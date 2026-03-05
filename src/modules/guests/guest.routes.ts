@@ -13,6 +13,8 @@ import {
 import { Type } from '@sinclair/typebox';
 
 const guestRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('onRequest', fastify.authenticate);
+
   const repository = new GuestRepository(fastify.prisma);
   const service = new GuestService(repository);
   const controller = new GuestController(service);
@@ -49,7 +51,18 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
       response: {
         200: Type.Object({
           ...GuestSchema.properties,
-          invitation: Type.Union([Type.Any(), Type.Null()]),
+          invitation: Type.Union([
+            Type.Object({
+              id: Type.String({ format: 'uuid' }),
+              name: Type.String(),
+              message: Type.Union([Type.String(), Type.Null()]),
+              eventDate: Type.Union([Type.String({ format: 'date' }), Type.Null()]),
+              location: Type.Union([Type.String(), Type.Null()]),
+              tableId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
+              createdAt: Type.String({ format: 'date-time' }),
+            }),
+            Type.Null(),
+          ]),
         }),
       },
     },

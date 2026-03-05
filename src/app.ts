@@ -7,6 +7,7 @@ import { swaggerOptions, swaggerUiOptions } from './config/swagger';
 import prismaPlugin from './plugins/prisma';
 import jwtPlugin from './plugins/jwt';
 import errorHandlerPlugin from './plugins/error-handler';
+import rateLimitPlugin from './plugins/rate-limit';
 import authRoutes from './modules/auth/auth.routes';
 import invitationRoutes from './modules/invitations/invitation.routes';
 import guestRoutes from './modules/guests/guest.routes';
@@ -41,6 +42,9 @@ export const buildApp = async () => {
 
   // JWT (DEBE ir antes de las rutas que usan fastify.authenticate)
   await fastify.register(jwtPlugin);
+
+  // Rate limiting
+  await fastify.register(rateLimitPlugin);
 
   // Error handling
   await fastify.register(errorHandlerPlugin);

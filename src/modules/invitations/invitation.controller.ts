@@ -7,6 +7,7 @@ import {
   InvitationQuery,
   CreateInvitationWithGuests,
 } from './invitation.schema';
+import { assertValidUUID } from '../../lib/uuid';
 
 export class InvitationController {
   constructor(private service: InvitationService) {}
@@ -15,7 +16,8 @@ export class InvitationController {
     request: FastifyRequest<{ Body: CreateInvitation }>,
     reply: FastifyReply
   ) {
-    const invitation = await this.service.createInvitation(request.body);
+    const userId = request.user.id;
+    const invitation = await this.service.createInvitation(request.body, userId);
     return reply.status(201).send(invitation);
   }
 
@@ -23,8 +25,9 @@ export class InvitationController {
     request: FastifyRequest<{ Body: CreateInvitationWithGuests }>,
     reply: FastifyReply
   ) {
+    const userId = request.user.id;
     const { invitation, guests } = request.body;
-    const result = await this.service.createInvitationWithGuests(invitation, guests);
+    const result = await this.service.createInvitationWithGuests(invitation, guests, userId);
     return reply.status(201).send(result);
   }
 
@@ -32,8 +35,9 @@ export class InvitationController {
     request: FastifyRequest<{ Querystring: InvitationQuery }>,
     reply: FastifyReply
   ) {
+    const userId = request.user.id;
     const { page, limit } = request.query;
-    const invitations = await this.service.getAllInvitations(page, limit);
+    const invitations = await this.service.getAllInvitations(userId, page, limit);
     return reply.send(invitations);
   }
 
@@ -41,7 +45,9 @@ export class InvitationController {
     request: FastifyRequest<{ Params: InvitationParams }>,
     reply: FastifyReply
   ) {
-    const invitation = await this.service.getInvitationById(request.params.id);
+    const userId = request.user.id;
+    assertValidUUID(request.params.id);
+    const invitation = await this.service.getInvitationById(request.params.id, userId);
     return reply.send(invitation);
   }
 
@@ -49,7 +55,9 @@ export class InvitationController {
     request: FastifyRequest<{ Params: InvitationParams; Body: UpdateInvitation }>,
     reply: FastifyReply
   ) {
-    const invitation = await this.service.updateInvitation(request.params.id, request.body);
+    const userId = request.user.id;
+    assertValidUUID(request.params.id);
+    const invitation = await this.service.updateInvitation(request.params.id, userId, request.body);
     return reply.send(invitation);
   }
 
@@ -57,7 +65,9 @@ export class InvitationController {
     request: FastifyRequest<{ Params: InvitationParams }>,
     reply: FastifyReply
   ) {
-    await this.service.deleteInvitation(request.params.id);
+    const userId = request.user.id;
+    assertValidUUID(request.params.id);
+    await this.service.deleteInvitation(request.params.id, userId);
     return reply.status(204).send();
   }
 }

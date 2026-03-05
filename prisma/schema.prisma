@@ -20,13 +20,18 @@ enum Status {
 
 model Table {
   id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String       @unique @db.Text
+  name        String       @db.Text
   capacity    Int          @default(8)
   location    String?      @db.Text
   notes       String?      @db.Text
+  userId      String       @map("user_id") @db.Uuid
   createdAt   DateTime     @default(now()) @map("created_at")
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz(6)
   invitations Invitation[]
+  user        User         @relation("UserTables", fields: [userId], references: [id])
 
+  @@unique([userId, name])
+  @@index([userId])
   @@map("tables")
 }
 
@@ -39,12 +44,16 @@ model Invitation {
   qrCode       String?  @map("qr_code") @db.Text
   operationId  String?  @map("operation_id") @db.Text
   tableId      String?  @map("table_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
   guests       Guest[]
   table        Table?   @relation(fields: [tableId], references: [id])
+  user         User     @relation("UserInvitations", fields: [userId], references: [id])
 
   @@index([operationId])
   @@index([tableId])
+  @@index([userId])
   @@map("invitations")
 }
 
@@ -57,12 +66,16 @@ model Guest {
   status       Status      @default(pending)
   invitationId String?     @map("invitation_id") @db.Uuid
   operationId  String?     @map("operation_id") @db.Text
+  userId       String      @map("user_id") @db.Uuid
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt    DateTime?   @map("deleted_at") @db.Timestamptz(6)
   invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  user         User        @relation("UserGuests", fields: [userId], references: [id])
 
   @@index([invitationId])
   @@index([status])
   @@index([operationId])
+  @@index([userId])
   @@map("guests")
 }
 
@@ -72,12 +85,15 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email     String   @unique @db.Text
-  password  String   @db.Text
-  name      String?  @db.Text
-  role      Role     @default(user)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String       @unique @db.Text
+  password    String       @db.Text
+  name        String?      @db.Text
+  role        Role         @default(user)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  tables      Table[]      @relation("UserTables")
+  invitations Invitation[] @relation("UserInvitations")
+  guests      Guest[]      @relation("UserGuests")
 
   @@map("users")
 }

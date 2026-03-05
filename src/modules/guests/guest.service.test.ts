@@ -3,7 +3,6 @@ import { GuestService } from './guest.service';
 import { GuestRepository } from './guest.repository';
 import { CreateGuest, UpdateGuest } from './guest.schema';
 
-// Mock del repository
 const mockRepository = {
   create: vi.fn(),
   findAll: vi.fn(),
@@ -14,6 +13,8 @@ const mockRepository = {
   findByName: vi.fn(),
   findByOperationId: vi.fn(),
 } as unknown as GuestRepository;
+
+const userId = 'user-123';
 
 describe('GuestService', () => {
   let service: GuestService;
@@ -38,16 +39,18 @@ describe('GuestService', () => {
         status: 'pending' as const,
         invitationId: null,
         operationId: null,
+        userId,
         createdAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
       vi.mocked(mockRepository.findByName).mockResolvedValue(null);
       vi.mocked(mockRepository.create).mockResolvedValue(expectedGuest);
 
-      const result = await service.createGuest(createData);
+      const result = await service.createGuest(createData, userId);
 
-      expect(mockRepository.findByName).toHaveBeenCalledWith('John Doe');
-      expect(mockRepository.create).toHaveBeenCalledWith(createData);
+      expect(mockRepository.findByName).toHaveBeenCalledWith('John Doe', userId);
+      expect(mockRepository.create).toHaveBeenCalledWith(createData, userId);
       expect(result).toEqual(expectedGuest);
     });
 
@@ -66,16 +69,18 @@ describe('GuestService', () => {
         status: 'pending' as const,
         invitationId: null,
         operationId: null,
+        userId,
         createdAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
       vi.mocked(mockRepository.findByName).mockResolvedValue(existingGuest);
 
-      await expect(service.createGuest(createData)).rejects.toThrow(
+      await expect(service.createGuest(createData, userId)).rejects.toThrow(
         'Guest with this name already exists'
       );
 
-      expect(mockRepository.findByName).toHaveBeenCalledWith('John Doe');
+      expect(mockRepository.findByName).toHaveBeenCalledWith('John Doe', userId);
       expect(mockRepository.create).not.toHaveBeenCalled();
     });
 
@@ -95,18 +100,20 @@ describe('GuestService', () => {
         status: 'pending' as const,
         invitationId: null,
         operationId: 'OP123',
+        userId,
         createdAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
       vi.mocked(mockRepository.findByName).mockResolvedValue(null);
       vi.mocked(mockRepository.findByOperationId).mockResolvedValue(existingGuest);
 
-      await expect(service.createGuest(createData)).rejects.toThrow(
+      await expect(service.createGuest(createData, userId)).rejects.toThrow(
         'Guest with this operationId already exists'
       );
 
-      expect(mockRepository.findByName).toHaveBeenCalledWith('John Doe');
-      expect(mockRepository.findByOperationId).toHaveBeenCalledWith('OP123');
+      expect(mockRepository.findByName).toHaveBeenCalledWith('John Doe', userId);
+      expect(mockRepository.findByOperationId).toHaveBeenCalledWith('OP123', userId);
       expect(mockRepository.create).not.toHaveBeenCalled();
     });
   });
@@ -123,16 +130,18 @@ describe('GuestService', () => {
           status: 'pending' as const,
           invitationId: null,
           operationId: null,
+          userId,
           createdAt: new Date().toISOString(),
+          deletedAt: null,
         },
       ];
 
       vi.mocked(mockRepository.findAll).mockResolvedValue(guests);
       vi.mocked(mockRepository.count).mockResolvedValue(1);
 
-      const result = await service.getAllGuests();
+      const result = await service.getAllGuests(userId);
 
-      expect(mockRepository.findAll).toHaveBeenCalledWith(undefined, undefined, undefined);
+      expect(mockRepository.findAll).toHaveBeenCalledWith(userId, undefined, undefined, undefined);
       expect(result).toEqual(guests);
     });
 
@@ -147,16 +156,18 @@ describe('GuestService', () => {
           status: 'pending' as const,
           invitationId: null,
           operationId: null,
+          userId,
           createdAt: new Date().toISOString(),
+          deletedAt: null,
         },
       ];
 
       vi.mocked(mockRepository.findAll).mockResolvedValue(guests);
       vi.mocked(mockRepository.count).mockResolvedValue(100);
 
-      const result = await service.getAllGuests(undefined, 1, 50);
+      const result = await service.getAllGuests(userId, undefined, 1, 50);
 
-      expect(mockRepository.findAll).toHaveBeenCalledWith(undefined, 0, 50);
+      expect(mockRepository.findAll).toHaveBeenCalledWith(userId, undefined, 0, 50);
       expect(result).toEqual({
         data: guests,
         total: 100,
@@ -177,21 +188,23 @@ describe('GuestService', () => {
         status: 'pending' as const,
         invitationId: null,
         operationId: null,
+        userId,
         createdAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
       vi.mocked(mockRepository.findById).mockResolvedValue(guest);
 
-      const result = await service.getGuestById('123');
+      const result = await service.getGuestById('123', userId);
 
-      expect(mockRepository.findById).toHaveBeenCalledWith('123');
+      expect(mockRepository.findById).toHaveBeenCalledWith('123', userId);
       expect(result).toEqual(guest);
     });
 
     it('should throw error when guest not found', async () => {
       vi.mocked(mockRepository.findById).mockResolvedValue(null);
 
-      await expect(service.getGuestById('999')).rejects.toThrow('Guest not found');
+      await expect(service.getGuestById('999', userId)).rejects.toThrow('Guest not found');
     });
   });
 
@@ -206,7 +219,9 @@ describe('GuestService', () => {
         status: 'pending' as const,
         invitationId: null,
         operationId: null,
+        userId,
         createdAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
       const updateData: UpdateGuest = {
@@ -221,10 +236,10 @@ describe('GuestService', () => {
       vi.mocked(mockRepository.findById).mockResolvedValue(existingGuest);
       vi.mocked(mockRepository.update).mockResolvedValue(updatedGuest);
 
-      const result = await service.updateGuest('123', updateData);
+      const result = await service.updateGuest('123', userId, updateData);
 
-      expect(mockRepository.findById).toHaveBeenCalledWith('123');
-      expect(mockRepository.update).toHaveBeenCalledWith('123', updateData);
+      expect(mockRepository.findById).toHaveBeenCalledWith('123', userId);
+      expect(mockRepository.update).toHaveBeenCalledWith('123', userId, updateData);
       expect(result).toEqual(updatedGuest);
     });
   });
@@ -240,15 +255,17 @@ describe('GuestService', () => {
         status: 'pending' as const,
         invitationId: null,
         operationId: null,
+        userId,
         createdAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
       vi.mocked(mockRepository.findById).mockResolvedValue(existingGuest);
       vi.mocked(mockRepository.delete).mockResolvedValue(existingGuest);
 
-      await service.deleteGuest('123');
+      await service.deleteGuest('123', userId);
 
-      expect(mockRepository.findById).toHaveBeenCalledWith('123');
+      expect(mockRepository.findById).toHaveBeenCalledWith('123', userId);
       expect(mockRepository.delete).toHaveBeenCalledWith('123');
     });
   });

@@ -25,6 +25,16 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         409: AuthErrorSchema,
       },
     },
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '1 hour',
+        errorResponseBuilder: () => ({
+          statusCode: 429,
+          error: 'Demasiados registros desde esta IP. Intenta en una hora.',
+        }),
+      },
+    },
     handler: controller.register.bind(controller),
   });
 
@@ -36,6 +46,16 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       response: {
         200: AuthResponseSchema,
         401: AuthErrorSchema,
+      },
+    },
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '15 minutes',
+        errorResponseBuilder: () => ({
+          statusCode: 429,
+          error: 'Demasiados intentos de inicio de sesion. Espera 15 minutos.',
+        }),
       },
     },
     handler: controller.login.bind(controller),

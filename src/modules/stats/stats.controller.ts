@@ -5,12 +5,14 @@ export class StatsController {
   constructor(private statsService: StatsService) {}
 
   async getDashboard(request: FastifyRequest, reply: FastifyReply) {
-    const stats = await this.statsService.getDashboardStats();
+    const userId = request.user.id;
+    const stats = await this.statsService.getDashboardStats(userId);
     return reply.send(stats);
   }
 
   async getTableStats(request: FastifyRequest, reply: FastifyReply) {
-    const stats = await this.statsService.getTableStats();
+    const userId = request.user.id;
+    const stats = await this.statsService.getTableStats(userId);
     return reply.send(stats);
   }
 }

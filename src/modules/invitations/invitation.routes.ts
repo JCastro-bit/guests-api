@@ -16,6 +16,8 @@ import {
 import { Type } from '@sinclair/typebox';
 
 const invitationRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('onRequest', fastify.authenticate);
+
   const repository = new InvitationRepository(fastify.prisma);
   const tableRepository = new TableRepository(fastify.prisma);
   const tableService = new TableService(tableRepository);
@@ -42,7 +44,16 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
       response: {
         201: Type.Object({
           ...InvitationSchema.properties,
-          guests: Type.Array(Type.Any()),
+          guests: Type.Array(Type.Object({
+            id: Type.String({ format: 'uuid' }),
+            name: Type.String(),
+            side: Type.Union([Type.Literal('bride'), Type.Literal('groom')]),
+            phone: Type.Union([Type.String(), Type.Null()]),
+            email: Type.Union([Type.String(), Type.Null()]),
+            status: Type.Union([Type.Literal('pending'), Type.Literal('confirmed'), Type.Literal('declined')]),
+            invitationId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
+            createdAt: Type.String({ format: 'date-time' }),
+          })),
         }),
       },
     },
@@ -69,7 +80,16 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
       response: {
         200: Type.Object({
           ...InvitationSchema.properties,
-          guests: Type.Array(Type.Any()),
+          guests: Type.Array(Type.Object({
+            id: Type.String({ format: 'uuid' }),
+            name: Type.String(),
+            side: Type.Union([Type.Literal('bride'), Type.Literal('groom')]),
+            phone: Type.Union([Type.String(), Type.Null()]),
+            email: Type.Union([Type.String(), Type.Null()]),
+            status: Type.Union([Type.Literal('pending'), Type.Literal('confirmed'), Type.Literal('declined')]),
+            invitationId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
+            createdAt: Type.String({ format: 'date-time' }),
+          })),
         }),
       },
     },

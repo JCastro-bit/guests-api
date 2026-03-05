@@ -19,9 +19,9 @@ export class StatsService {
     private tableService: TableService
   ) {}
 
-  async getDashboardStats() {
-    const stats = await this.invitationRepository.getStatsCounts();
-    const mostRecentEventDate = await this.invitationRepository.getMostRecentEventDate();
+  async getDashboardStats(userId: string) {
+    const stats = await this.invitationRepository.getStatsCounts(userId);
+    const mostRecentEventDate = await this.invitationRepository.getMostRecentEventDate(userId);
 
     let daysUntilWedding = 0;
     if (mostRecentEventDate) {
@@ -37,8 +37,8 @@ export class StatsService {
     };
   }
 
-  async getTableStats(): Promise<TableStats> {
-    const tables = await this.tableService.getAllTables();
+  async getTableStats(userId: string): Promise<TableStats> {
+    const tables = await this.tableService.getAllTables(userId);
     const tablesArray: TableWithStatsData[] = Array.isArray(tables)
       ? (tables as TableWithStatsData[])
       : (tables as PaginatedResult<TableWithStatsData>).data;

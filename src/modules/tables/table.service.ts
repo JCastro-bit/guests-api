@@ -6,52 +6,48 @@ import { calcPaginationParams, formatPaginatedResponse } from '../../utils/pagin
 export class TableService {
   constructor(private repository: TableRepository) {}
 
-  async createTable(data: CreateTable) {
-    // Verificar que no exista una mesa con el mismo nombre
-    const existingTable = await this.repository.findByName(data.name);
+  async createTable(data: CreateTable, userId: string) {
+    const existingTable = await this.repository.findByName(data.name, userId);
     if (existingTable) {
       throw ConflictError('Table with this name already exists');
     }
 
-    return this.repository.create(data);
+    return this.repository.create(data, userId);
   }
 
-  async getAllTables(page?: number, limit?: number) {
+  async getAllTables(userId: string, page?: number, limit?: number) {
     if (page !== undefined && limit !== undefined) {
       const { skip, take } = calcPaginationParams(page, limit);
       const [data, total] = await Promise.all([
-        this.repository.findAllWithStats(skip, take),
-        this.repository.count(),
+        this.repository.findAllWithStats(userId, skip, take),
+        this.repository.count(userId),
       ]);
       return formatPaginatedResponse(data, total, page, limit);
     }
 
-    return this.repository.findAllWithStats();
+    return this.repository.findAllWithStats(userId);
   }
 
-  async getTableById(id: string) {
-    const table = await this.repository.findByIdWithStats(id);
+  async getTableById(id: string, userId: string) {
+    const table = await this.repository.findByIdWithStats(id, userId);
     if (!table) {
       throw NotFoundError('Table');
     }
     return table;
   }
 
-  async updateTable(id: string, data: UpdateTable) {
-    // Verificar que la mesa exista
-    await this.getTableById(id);
+  async updateTable(id: string, userId: string, data: UpdateTable) {
+    await this.getTableById(id, userId);
 
-    // Si se está actualizando el nombre, verificar que no exista otra mesa con ese nombre
     if (data.name) {
-      const existingTable = await this.repository.findByName(data.name);
+      const existingTable = await this.repository.findByName(data.name, userId);
       if (existingTable && existingTable.id !== id) {
         throw ConflictError('Table with this name already exists');
       }
     }
 
-    // Si se está reduciendo la capacidad, verificar que no haya más invitados que la nueva capacidad
     if (data.capacity !== undefined) {
-      const currentTable = await this.repository.findById(id);
+      const currentTable = await this.repository.findById(id, userId);
       if (currentTable) {
         const guestCount = await this.repository.getGuestCountForTable(id);
         if (data.capacity < guestCount) {
@@ -65,11 +61,9 @@ export class TableService {
     return this.repository.update(id, data);
   }
 
-  async deleteTable(id: string) {
-    // Verificar que la mesa exista
-    await this.getTableById(id);
+  async deleteTable(id: string, userId: string) {
+    await this.getTableById(id, userId);
 
-    // Verificar que no tenga invitaciones asignadas
     const hasInvitations = await this.repository.hasInvitations(id);
     if (hasInvitations) {
       throw ConflictError('Cannot delete table with assigned invitations');
@@ -78,8 +72,8 @@ export class TableService {
     return this.repository.delete(id);
   }
 
-  async validateTableCapacity(tableId: string, additionalGuests: number = 0): Promise<void> {
-    const table = await this.repository.findById(tableId);
+  async validateTableCapacity(tableId: string, userId: string, additionalGuests: number = 0): Promise<void> {
+    const table = await this.repository.findById(tableId, userId);
     if (!table) {
       throw NotFoundError('Table');
     }

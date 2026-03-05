@@ -48,7 +48,25 @@ export const TableWithStatsSchema = Type.Object({
   createdAt: Type.String({ format: 'date-time' }),
   guestCount: Type.Integer(),
   available: Type.Integer(),
-  invitations: Type.Array(Type.Any()),
+  invitations: Type.Array(Type.Object({
+    id: Type.String({ format: 'uuid' }),
+    name: Type.String(),
+    message: Type.Union([Type.String(), Type.Null()]),
+    eventDate: Type.Union([Type.String({ format: 'date' }), Type.Null()]),
+    location: Type.Union([Type.String(), Type.Null()]),
+    tableId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
+    createdAt: Type.String({ format: 'date-time' }),
+    guests: Type.Array(Type.Object({
+      id: Type.String({ format: 'uuid' }),
+      name: Type.String(),
+      side: Type.Union([Type.Literal('bride'), Type.Literal('groom')]),
+      phone: Type.Union([Type.String(), Type.Null()]),
+      email: Type.Union([Type.String(), Type.Null()]),
+      status: Type.Union([Type.Literal('pending'), Type.Literal('confirmed'), Type.Literal('declined')]),
+      invitationId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
+      createdAt: Type.String({ format: 'date-time' }),
+    })),
+  })),
 });
 
 export type Table = Static<typeof TableSchema>;
