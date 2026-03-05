@@ -5,6 +5,7 @@ import { InvitationRepository } from '../invitations/invitation.repository';
 import { TableService } from '../tables/table.service';
 import { TableRepository } from '../tables/table.repository';
 import { DashboardStatsSchema, TableStatsSchema } from './stats.schema';
+import { ErrorResponseSchema } from '../../schemas/error.schema';
 
 const statsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('onRequest', fastify.authenticate);
@@ -24,6 +25,7 @@ const statsRoutes: FastifyPluginAsync = async (fastify) => {
       response: {
         200: DashboardStatsSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.getDashboard.bind(controller),
   });
@@ -35,6 +37,7 @@ const statsRoutes: FastifyPluginAsync = async (fastify) => {
       response: {
         200: TableStatsSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.getTableStats.bind(controller),
   });

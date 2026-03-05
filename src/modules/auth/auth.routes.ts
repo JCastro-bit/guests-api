@@ -12,6 +12,7 @@ import {
   ResetPasswordBodySchema,
   MessageResponseSchema,
 } from './auth.schema';
+import { ErrorResponseSchema } from '../../schemas/error.schema';
 
 const authRoutes: FastifyPluginAsync = async (fastify) => {
   const repository = new AuthRepository(fastify.prisma);
@@ -85,6 +86,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       body: ForgotPasswordBodySchema,
       response: {
         200: MessageResponseSchema,
+        400: ErrorResponseSchema,
       },
     },
     config: {

@@ -10,6 +10,7 @@ import {
   GuestQuerySchema,
   PaginatedGuestsSchema,
 } from './guest.schema';
+import { ErrorResponseSchema } from '../../schemas/error.schema';
 import { Type } from '@sinclair/typebox';
 
 const guestRoutes: FastifyPluginAsync = async (fastify) => {
@@ -26,7 +27,9 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
       body: CreateGuestSchema,
       response: {
         201: GuestSchema,
+        409: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.create.bind(controller),
   });
@@ -39,6 +42,7 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
       response: {
         200: Type.Union([Type.Array(GuestSchema), PaginatedGuestsSchema]),
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.getAll.bind(controller),
   });
@@ -64,7 +68,9 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
             Type.Null(),
           ]),
         }),
+        404: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.getById.bind(controller),
   });
@@ -77,7 +83,9 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
       body: UpdateGuestSchema,
       response: {
         200: GuestSchema,
+        404: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.update.bind(controller),
   });
@@ -89,7 +97,9 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
       params: GuestParamsSchema,
       response: {
         204: Type.Null(),
+        404: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.delete.bind(controller),
   });

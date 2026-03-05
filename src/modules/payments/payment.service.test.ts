@@ -185,6 +185,61 @@ describe('PaymentService', () => {
       );
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
     });
+
+    it('should send payment confirmation email on activation', async () => {
+      mockMp.payment.get.mockResolvedValue({
+        status: 'approved',
+        external_reference: 'user-1|esencial',
+      });
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        name: 'Test User',
+        planStatus: 'inactive',
+        mpPaymentId: null,
+      });
+
+      mockPrisma.user.update.mockResolvedValue({});
+
+      await service.processWebhook('12345');
+
+      expect(mockPrisma.user.update).toHaveBeenCalled();
+    });
+  });
+
+  describe('createPreference — premium plan', () => {
+    it('should create preference with premium price', async () => {
+      mockPrisma.user.findUniqueOrThrow.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        name: 'Test User',
+      });
+
+      mockMp.preference.create.mockResolvedValue({
+        id: 'pref-456',
+        init_point: 'https://www.mercadopago.com.mx/checkout/v1/redirect?pref_id=pref-456',
+        sandbox_init_point: 'https://sandbox.mercadopago.com.mx/checkout/v1/redirect?pref_id=pref-456',
+      });
+
+      const result = await service.createPreference('user-1', 'premium');
+
+      expect(mockMp.preference.create).toHaveBeenCalledWith({
+        body: expect.objectContaining({
+          items: [
+            expect.objectContaining({
+              id: 'premium',
+              title: 'LOVEPOSTAL — Plan Premium',
+              quantity: 1,
+              unit_price: 4499,
+              currency_id: 'MXN',
+            }),
+          ],
+          external_reference: 'user-1|premium',
+        }),
+      });
+      expect(result.preferenceId).toBe('pref-456');
+    });
   });
 
   describe('verifyWebhookSignature', () => {
@@ -197,6 +252,43 @@ describe('PaymentService', () => {
       expect(result).toBe(true);
 
       if (original !== undefined) process.env.MP_WEBHOOK_SECRET = original;
+    });
+
+    it('should return true for valid HMAC signature', () => {
+      const original = process.env.MP_WEBHOOK_SECRET;
+      process.env.MP_WEBHOOK_SECRET = 'test-secret';
+
+      const crypto = require('crypto');
+      const manifest = 'id:data-123;request-id:req-456;ts:1234567890;';
+      const expected = crypto
+        .createHmac('sha256', 'test-secret')
+        .update(manifest)
+        .digest('hex');
+
+      const result = service.verifyWebhookSignature(expected, 'req-456', 'data-123', '1234567890');
+
+      expect(result).toBe(true);
+
+      if (original !== undefined) {
+        process.env.MP_WEBHOOK_SECRET = original;
+      } else {
+        delete process.env.MP_WEBHOOK_SECRET;
+      }
+    });
+
+    it('should return false for invalid HMAC signature', () => {
+      const original = process.env.MP_WEBHOOK_SECRET;
+      process.env.MP_WEBHOOK_SECRET = 'test-secret';
+
+      const result = service.verifyWebhookSignature('invalid-hash', 'req-456', 'data-123', '1234567890');
+
+      expect(result).toBe(false);
+
+      if (original !== undefined) {
+        process.env.MP_WEBHOOK_SECRET = original;
+      } else {
+        delete process.env.MP_WEBHOOK_SECRET;
+      }
     });
   });
 });

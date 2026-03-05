@@ -11,6 +11,7 @@ import {
   PaginatedTablesSchema,
   TableWithStatsSchema,
 } from './table.schema';
+import { ErrorResponseSchema } from '../../schemas/error.schema';
 import { Type } from '@sinclair/typebox';
 
 const tableRoutes: FastifyPluginAsync = async (fastify) => {
@@ -27,7 +28,9 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
       body: CreateTableSchema,
       response: {
         201: TableSchema,
+        409: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.create.bind(controller),
   });
@@ -66,6 +69,7 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
           }),
         ]),
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.getAll.bind(controller),
   });
@@ -77,7 +81,9 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
       params: TableParamsSchema,
       response: {
         200: TableWithStatsSchema,
+        404: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.getById.bind(controller),
   });
@@ -90,7 +96,10 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
       body: UpdateTableSchema,
       response: {
         200: TableSchema,
+        404: ErrorResponseSchema,
+        409: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.update.bind(controller),
   });
@@ -102,7 +111,10 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
       params: TableParamsSchema,
       response: {
         204: Type.Null(),
+        404: ErrorResponseSchema,
+        409: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.delete.bind(controller),
   });

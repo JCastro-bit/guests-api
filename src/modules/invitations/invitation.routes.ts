@@ -13,6 +13,7 @@ import {
   PaginatedInvitationsSchema,
   CreateInvitationWithGuestsSchema,
 } from './invitation.schema';
+import { ErrorResponseSchema } from '../../schemas/error.schema';
 import { Type } from '@sinclair/typebox';
 
 const invitationRoutes: FastifyPluginAsync = async (fastify) => {
@@ -31,7 +32,9 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
       body: CreateInvitationSchema,
       response: {
         201: InvitationSchema,
+        409: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.create.bind(controller),
   });
@@ -55,7 +58,9 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
             createdAt: Type.String({ format: 'date-time' }),
           })),
         }),
+        409: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.createWithGuests.bind(controller),
   });
@@ -68,6 +73,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
       response: {
         200: Type.Union([Type.Array(InvitationSchema), PaginatedInvitationsSchema]),
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.getAll.bind(controller),
   });
@@ -91,7 +97,9 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
             createdAt: Type.String({ format: 'date-time' }),
           })),
         }),
+        404: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.getById.bind(controller),
   });
@@ -104,7 +112,10 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
       body: UpdateInvitationSchema,
       response: {
         200: InvitationSchema,
+        404: ErrorResponseSchema,
+        409: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.update.bind(controller),
   });
@@ -116,7 +127,9 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
       params: InvitationParamsSchema,
       response: {
         204: Type.Null(),
+        404: ErrorResponseSchema,
       },
+      security: [{ bearerAuth: [] }],
     },
     handler: controller.delete.bind(controller),
   });

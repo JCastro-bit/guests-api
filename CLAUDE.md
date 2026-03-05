@@ -26,21 +26,23 @@ Backend API REST para **LOVEPOSTAL** — plataforma B2C SaaS de invitaciones dig
 | @fastify/jwt | ^10.0.0 | Autenticación JWT (7d expiry) |
 | @fastify/rate-limit | ^10.3.0 | Rate limiting (global + per-route) |
 | nodemailer | latest | Envío de emails SMTP |
+| mercadopago | latest | SDK MercadoPago Checkout Pro |
 
 ## Estructura del proyecto
 
 ```
 src/
-├── config/          # env.ts (DATABASE_URL, JWT_SECRET, PORT, HOST, SMTP_*, APP_URL) + swagger.ts
+├── config/          # env.ts (DATABASE_URL, JWT_SECRET, PORT, HOST, SMTP_*, APP_URL, API_URL, MP_*) + swagger.ts
 ├── errors/          # AppError + factories: NotFoundError, ConflictError, UnauthorizedError, InternalError
 ├── lib/             # uuid.ts — validación UUID v4 (assertValidUUID)
-├── plugins/         # prisma.ts, jwt.ts (authenticate decorator), error-handler.ts, rate-limit.ts, mailer.ts
+├── plugins/         # prisma.ts, jwt.ts (authenticate decorator), error-handler.ts, rate-limit.ts, mailer.ts, mercadopago.ts
 ├── modules/
 │   ├── auth/        # Registro, login, perfil, forgot/reset password (JWT). Rutas públicas: register, login, forgot-password, reset-password
 │   ├── email/       # EmailService + templates HTML (welcome, reset-password, payment-confirmation, rsvp-notification)
 │   ├── guests/      # CRUD invitados (side: bride|groom, status: pending|confirmed|declined)
 │   ├── invitations/ # CRUD invitaciones + createWithGuests (transacción atómica)
 │   ├── tables/      # CRUD mesas + validación de capacidad (default: 8)
+│   ├── payments/    # MercadoPago Checkout Pro: create-preference (JWT) + webhook (público, HMAC)
 │   └── stats/       # Dashboard (totales, días hasta boda) + stats de mesas
 ├── types/           # fastify.d.ts — augmentación de FastifyInstance
 ├── utils/           # pagination.ts — calcPaginationParams(), formatPaginatedResponse()
@@ -75,7 +77,7 @@ prisma/
 - **Schemas:** TypeBox (`@sinclair/typebox`) — todo endpoint con schema completo (body, params, query, responses)
 - **Errores:** `NotFoundError('Guest')`, `ConflictError('msg')`, `UnauthorizedError()`, `InternalError('msg')`
 - **Imports:** paths relativos, sin alias
-- **Swagger:** todo endpoint documentado con tags (auth, guests, invitations, tables, stats), summary y responses
+- **Swagger:** todo endpoint documentado con tags (auth, guests, invitations, tables, stats, payments), summary y responses
 - **Evitar:** `any` sin justificacion, `@ts-ignore`, `throw new Error()` en services, hardcodear URLs
 - **Dominio:** siempre `lovepostal.studio`, NUNCA `lovepostal.app`
 - **Auth:** NUNCA retornar `password`, `resetToken` ni `resetTokenExpiry` en respuestas. Errores de login: siempre `'Invalid email or password'`
@@ -95,8 +97,8 @@ prisma/
 - **Framework:** Vitest ^4.0.12 con globals habilitados y coverage v8
 - **Ubicacion:** colocados junto al codigo (`modulo.service.test.ts`)
 - **Patron:** mocks manuales de repository con `vi.fn()`, estructura AAA (Arrange-Act-Assert)
-- **Cobertura:** 5/5 modulos con tests (auth, guests, invitations, tables, stats) + uuid lib
-- **Tests totales:** 66 tests en 7 archivos
+- **Cobertura:** 7/7 modulos con tests (auth, guests, invitations, tables, stats, payments, email) + uuid lib
+- **Tests totales:** 84 tests en 9 archivos
 - **Regla:** todo service nuevo DEBE tener tests unitarios
 - **Ejecutar:** `npm run test:run` antes de cada PR
 
@@ -114,7 +116,9 @@ prisma/
 8. Soft delete implementado en guests, invitations, tables (campo `deletedAt`, todas las queries filtran `deletedAt: null`)
 9. Multi-tenant: todos los modelos de datos (Table, Invitation, Guest) tienen `userId` FK — todas las queries filtran por userId
 10. Forgot password: no revela si el email existe (prevención de user enumeration). Token expira en 1 hora
-11. Modelo User tiene campos de plan (PlanTier: free|esencial|premium, PlanStatus: inactive|active|expired) y campos de pago (mpPaymentId) preparados para Fase 2 (MercadoPago)
+11. Modelo User tiene campos de plan (PlanTier: free|esencial|premium, PlanStatus: inactive|active|expired) y campos de pago (mpPaymentId)
+12. Pagos MercadoPago: webhook idempotente (verifica mpPaymentId antes de activar), firma HMAC verificada, external_reference formato `userId|plan`
+13. Precios: Esencial $2,250 MXN / Premium $4,499 MXN — definidos en `PaymentService.PLAN_PRICES`
 
 ## Limites y seguridad
 

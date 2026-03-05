@@ -7,6 +7,7 @@ import {
   WebhookBodySchema,
   WebhookResponseSchema,
 } from './payment.schema';
+import { ErrorResponseSchema } from '../../schemas/error.schema';
 import { Type } from '@sinclair/typebox';
 
 const paymentRoutes: FastifyPluginAsync = async (fastify) => {
@@ -34,7 +35,7 @@ const paymentRoutes: FastifyPluginAsync = async (fastify) => {
       body: WebhookBodySchema,
       response: {
         200: WebhookResponseSchema,
-        401: Type.Object({ error: Type.String() }),
+        401: ErrorResponseSchema,
       },
     },
     handler: controller.webhook.bind(controller),
