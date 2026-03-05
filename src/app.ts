@@ -14,6 +14,8 @@ import invitationRoutes from './modules/invitations/invitation.routes';
 import guestRoutes from './modules/guests/guest.routes';
 import statsRoutes from './modules/stats/stats.routes';
 import tableRoutes from './modules/tables/table.routes';
+import paymentRoutes from './modules/payments/payment.routes';
+import mercadopagoPlugin from './plugins/mercadopago';
 
 export const buildApp = async () => {
   const fastify = Fastify({
@@ -47,6 +49,9 @@ export const buildApp = async () => {
   // Email
   await fastify.register(mailerPlugin);
 
+  // MercadoPago
+  await fastify.register(mercadopagoPlugin);
+
   // Rate limiting
   await fastify.register(rateLimitPlugin);
 
@@ -59,6 +64,7 @@ export const buildApp = async () => {
   await fastify.register(guestRoutes, { prefix: '/api/v1/guests' });
   await fastify.register(statsRoutes, { prefix: '/api/v1/stats' });
   await fastify.register(tableRoutes, { prefix: '/api/v1/tables' });
+  await fastify.register(paymentRoutes, { prefix: '/api/v1/payments' });
 
   // Health check
   fastify.get('/health', async () => ({ status: 'ok' }));
