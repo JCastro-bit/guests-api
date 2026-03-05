@@ -24,16 +24,20 @@ Backend API REST para **LOVEPOSTAL** — plataforma B2C SaaS de invitaciones dig
 | Vitest | ^4.0.12 | Testing |
 | bcrypt | ^6.0.0 | Hash de passwords |
 | @fastify/jwt | ^10.0.0 | Autenticación JWT (7d expiry) |
+| @fastify/rate-limit | ^10.3.0 | Rate limiting (global + per-route) |
+| nodemailer | latest | Envío de emails SMTP |
 
 ## Estructura del proyecto
 
 ```
 src/
-├── config/          # env.ts (DATABASE_URL, JWT_SECRET, PORT, HOST) + swagger.ts
+├── config/          # env.ts (DATABASE_URL, JWT_SECRET, PORT, HOST, SMTP_*, APP_URL) + swagger.ts
 ├── errors/          # AppError + factories: NotFoundError, ConflictError, UnauthorizedError, InternalError
-├── plugins/         # prisma.ts, jwt.ts (authenticate decorator), error-handler.ts
+├── lib/             # uuid.ts — validación UUID v4 (assertValidUUID)
+├── plugins/         # prisma.ts, jwt.ts (authenticate decorator), error-handler.ts, rate-limit.ts, mailer.ts
 ├── modules/
-│   ├── auth/        # Registro, login, perfil (JWT). Rutas públicas: register, login
+│   ├── auth/        # Registro, login, perfil, forgot/reset password (JWT). Rutas públicas: register, login, forgot-password, reset-password
+│   ├── email/       # EmailService + templates HTML (welcome, reset-password, payment-confirmation, rsvp-notification)
 │   ├── guests/      # CRUD invitados (side: bride|groom, status: pending|confirmed|declined)
 │   ├── invitations/ # CRUD invitaciones + createWithGuests (transacción atómica)
 │   ├── tables/      # CRUD mesas + validación de capacidad (default: 8)
@@ -43,7 +47,7 @@ src/
 ├── app.ts           # buildApp() — registra plugins y rutas (/api/v1/*)
 └── server.ts        # Entrypoint — listen + graceful shutdown
 prisma/
-├── schema.prisma    # Modelos: User, Table, Invitation, Guest
+├── schema.prisma    # Modelos: User (+ PlanTier, PlanStatus enums), Table, Invitation, Guest
 ├── seed.js          # Upsert admin (ADMIN_EMAIL/ADMIN_PASSWORD). JS, no TS.
 └── migrations/      # Migraciones SQL
 ```
@@ -74,7 +78,10 @@ prisma/
 - **Swagger:** todo endpoint documentado con tags (auth, guests, invitations, tables, stats), summary y responses
 - **Evitar:** `any` sin justificacion, `@ts-ignore`, `throw new Error()` en services, hardcodear URLs
 - **Dominio:** siempre `lovepostal.studio`, NUNCA `lovepostal.app`
-- **Auth:** NUNCA retornar `password` en respuestas. Errores de login: siempre `'Invalid email or password'`
+- **Auth:** NUNCA retornar `password`, `resetToken` ni `resetTokenExpiry` en respuestas. Errores de login: siempre `'Invalid email or password'`
+- **Emails:** templates como funciones TypeScript puras en `src/modules/email/templates/`. Fire-and-forget (no bloquean respuesta HTTP)
+- **UUID validation:** `assertValidUUID()` en controllers antes de queries a BD (ajv-formats no instalado, `format: 'uuid'` es decorativo)
+- **Rate limiting:** global 100 req/min + per-route overrides en auth (register 5/hr, login 10/15min, forgot-password 5/hr)
 
 ## Flujo de trabajo
 
@@ -88,7 +95,8 @@ prisma/
 - **Framework:** Vitest ^4.0.12 con globals habilitados y coverage v8
 - **Ubicacion:** colocados junto al codigo (`modulo.service.test.ts`)
 - **Patron:** mocks manuales de repository con `vi.fn()`, estructura AAA (Arrange-Act-Assert)
-- **Cobertura:** 5/5 modulos con tests (auth, guests, invitations, tables, stats)
+- **Cobertura:** 5/5 modulos con tests (auth, guests, invitations, tables, stats) + uuid lib
+- **Tests totales:** 66 tests en 7 archivos
 - **Regla:** todo service nuevo DEBE tener tests unitarios
 - **Ejecutar:** `npm run test:run` antes de cada PR
 
@@ -105,6 +113,8 @@ prisma/
 7. `onDelete: SetNull` para guests (eliminar invitation) e invitations (eliminar table)
 8. Soft delete implementado en guests, invitations, tables (campo `deletedAt`, todas las queries filtran `deletedAt: null`)
 9. Multi-tenant: todos los modelos de datos (Table, Invitation, Guest) tienen `userId` FK — todas las queries filtran por userId
+10. Forgot password: no revela si el email existe (prevención de user enumeration). Token expira en 1 hora
+11. Modelo User tiene campos de plan (PlanTier: free|esencial|premium, PlanStatus: inactive|active|expired) y campos de pago (mpPaymentId) preparados para Fase 2 (MercadoPago)
 
 ## Limites y seguridad
 
@@ -129,7 +139,7 @@ prisma/
 - Commitear secrets, tokens o API keys
 - Ignorar errores TypeScript con `@ts-ignore` sin justificacion documentada
 - Ejecutar comandos destructivos contra la base de datos de produccion
-- Retornar el campo `password` del modelo User en ninguna respuesta
+- Retornar `password`, `resetToken` o `resetTokenExpiry` del modelo User en ninguna respuesta
 - Usar el dominio `lovepostal.app` (correcto: `lovepostal.studio`)
 
 ### Archivos protegidos
