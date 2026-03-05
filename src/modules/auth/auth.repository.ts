@@ -32,4 +32,34 @@ export class AuthRepository {
       where: { id },
     });
   }
+
+  async saveResetToken(userId: string, token: string, expiry: Date): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        resetToken: token,
+        resetTokenExpiry: expiry,
+      },
+    });
+  }
+
+  async findByResetToken(token: string): Promise<User | null> {
+    return this.prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpiry: { gt: new Date() },
+      },
+    });
+  }
+
+  async updatePassword(userId: string, hashedPassword: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+  }
 }

@@ -8,6 +8,9 @@ const mockRepository = {
   create: vi.fn(),
   findByEmail: vi.fn(),
   findById: vi.fn(),
+  saveResetToken: vi.fn(),
+  findByResetToken: vi.fn(),
+  updatePassword: vi.fn(),
 } as unknown as AuthRepository;
 
 describe('AuthService', () => {
@@ -33,6 +36,13 @@ describe('AuthService', () => {
         password: data.password,
         name: data.name,
         role: 'user' as const,
+        plan: 'free' as const,
+        planStatus: 'inactive' as const,
+        planActivatedAt: null,
+        planExpiresAt: null,
+        mpPaymentId: null,
+        resetToken: null,
+        resetTokenExpiry: null,
         createdAt: new Date(),
       }));
 
@@ -56,6 +66,8 @@ describe('AuthService', () => {
         email: 'test@example.com',
         name: 'Test User',
         role: 'user',
+        plan: 'free',
+        planStatus: 'inactive',
         createdAt: expect.any(Date),
       });
       expect((result as any).password).toBeUndefined();
@@ -68,6 +80,13 @@ describe('AuthService', () => {
         password: 'hashed',
         name: 'Existing',
         role: 'user' as const,
+        plan: 'free' as const,
+        planStatus: 'inactive' as const,
+        planActivatedAt: null,
+        planExpiresAt: null,
+        mpPaymentId: null,
+        resetToken: null,
+        resetTokenExpiry: null,
         createdAt: new Date(),
       });
 
@@ -89,6 +108,13 @@ describe('AuthService', () => {
         password: hashedPassword,
         name: 'Test User',
         role: 'user' as const,
+        plan: 'free' as const,
+        planStatus: 'inactive' as const,
+        planActivatedAt: null,
+        planExpiresAt: null,
+        mpPaymentId: null,
+        resetToken: null,
+        resetTokenExpiry: null,
         createdAt: new Date(),
       });
 
@@ -102,6 +128,8 @@ describe('AuthService', () => {
         email: 'test@example.com',
         name: 'Test User',
         role: 'user',
+        plan: 'free',
+        planStatus: 'inactive',
         createdAt: expect.any(Date),
       });
       expect((result as any).password).toBeUndefined();
@@ -124,6 +152,13 @@ describe('AuthService', () => {
         password: hashedPassword,
         name: 'Test User',
         role: 'user' as const,
+        plan: 'free' as const,
+        planStatus: 'inactive' as const,
+        planActivatedAt: null,
+        planExpiresAt: null,
+        mpPaymentId: null,
+        resetToken: null,
+        resetTokenExpiry: null,
         createdAt: new Date(),
       });
 
@@ -146,6 +181,13 @@ describe('AuthService', () => {
           password: hashedPassword,
           name: null,
           role: 'user' as const,
+          plan: 'free' as const,
+          planStatus: 'inactive' as const,
+          planActivatedAt: null,
+          planExpiresAt: null,
+          mpPaymentId: null,
+          resetToken: null,
+          resetTokenExpiry: null,
           createdAt: new Date(),
         });
 
@@ -166,6 +208,13 @@ describe('AuthService', () => {
         password: 'hashedpassword',
         name: 'Test User',
         role: 'user' as const,
+        plan: 'free' as const,
+        planStatus: 'inactive' as const,
+        planActivatedAt: null,
+        planExpiresAt: null,
+        mpPaymentId: null,
+        resetToken: null,
+        resetTokenExpiry: null,
         createdAt: new Date(),
       });
 
@@ -176,6 +225,8 @@ describe('AuthService', () => {
         email: 'test@example.com',
         name: 'Test User',
         role: 'user',
+        plan: 'free',
+        planStatus: 'inactive',
         createdAt: expect.any(Date),
       });
       expect((result as any).password).toBeUndefined();

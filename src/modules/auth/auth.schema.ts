@@ -18,6 +18,16 @@ export const UserResponseSchema = Type.Object({
   email: Type.String({ format: 'email' }),
   name: Type.Union([Type.String(), Type.Null()]),
   role: RoleEnum,
+  plan: Type.Union([
+    Type.Literal('free'),
+    Type.Literal('esencial'),
+    Type.Literal('premium'),
+  ]),
+  planStatus: Type.Union([
+    Type.Literal('inactive'),
+    Type.Literal('active'),
+    Type.Literal('expired'),
+  ]),
   createdAt: Type.String({ format: 'date-time' }),
 });
 
@@ -38,7 +48,34 @@ export const AuthErrorSchema = Type.Object({
   }),
 });
 
+export const PlanTierEnum = Type.Union([
+  Type.Literal('free'),
+  Type.Literal('esencial'),
+  Type.Literal('premium'),
+]);
+
+export const PlanStatusEnum = Type.Union([
+  Type.Literal('inactive'),
+  Type.Literal('active'),
+  Type.Literal('expired'),
+]);
+
+export const ForgotPasswordBodySchema = Type.Object({
+  email: Type.String({ format: 'email' }),
+});
+
+export const ResetPasswordBodySchema = Type.Object({
+  token: Type.String({ minLength: 1 }),
+  password: Type.String({ minLength: 8 }),
+});
+
+export const MessageResponseSchema = Type.Object({
+  message: Type.String(),
+});
+
 export type RegisterBody = Static<typeof RegisterBodySchema>;
 export type LoginBody = Static<typeof LoginBodySchema>;
 export type UserResponse = Static<typeof UserResponseSchema>;
 export type AuthResponse = Static<typeof AuthResponseSchema>;
+export type ForgotPasswordBody = Static<typeof ForgotPasswordBodySchema>;
+export type ResetPasswordBody = Static<typeof ResetPasswordBodySchema>;

@@ -84,16 +84,35 @@ enum Role {
   admin
 }
 
+enum PlanTier {
+  free
+  esencial
+  premium
+}
+
+enum PlanStatus {
+  inactive
+  active
+  expired
+}
+
 model User {
-  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email       String       @unique @db.Text
-  password    String       @db.Text
-  name        String?      @db.Text
-  role        Role         @default(user)
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  tables      Table[]      @relation("UserTables")
-  invitations Invitation[] @relation("UserInvitations")
-  guests      Guest[]      @relation("UserGuests")
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email            String       @unique @db.Text
+  password         String       @db.Text
+  name             String?      @db.Text
+  role             Role         @default(user)
+  plan             PlanTier     @default(free)
+  planStatus       PlanStatus   @default(inactive)
+  planActivatedAt  DateTime?    @map("plan_activated_at") @db.Timestamptz(6)
+  planExpiresAt    DateTime?    @map("plan_expires_at") @db.Timestamptz(6)
+  mpPaymentId      String?      @map("mp_payment_id") @db.Text
+  resetToken       String?      @map("reset_token") @db.Text
+  resetTokenExpiry DateTime?    @map("reset_token_expiry") @db.Timestamptz(6)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  tables           Table[]      @relation("UserTables")
+  invitations      Invitation[] @relation("UserInvitations")
+  guests           Guest[]      @relation("UserGuests")
 
   @@map("users")
 }

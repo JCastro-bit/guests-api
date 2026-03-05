@@ -8,6 +8,7 @@ import prismaPlugin from './plugins/prisma';
 import jwtPlugin from './plugins/jwt';
 import errorHandlerPlugin from './plugins/error-handler';
 import rateLimitPlugin from './plugins/rate-limit';
+import mailerPlugin from './plugins/mailer';
 import authRoutes from './modules/auth/auth.routes';
 import invitationRoutes from './modules/invitations/invitation.routes';
 import guestRoutes from './modules/guests/guest.routes';
@@ -42,6 +43,9 @@ export const buildApp = async () => {
 
   // JWT (DEBE ir antes de las rutas que usan fastify.authenticate)
   await fastify.register(jwtPlugin);
+
+  // Email
+  await fastify.register(mailerPlugin);
 
   // Rate limiting
   await fastify.register(rateLimitPlugin);
