@@ -105,7 +105,7 @@ model User {
   name             String?      @db.Text
   role             Role         @default(user)
   plan             PlanTier     @default(free)
-  planStatus       PlanStatus   @default(inactive)
+  planStatus       PlanStatus   @default(inactive) @map("plan_status")
   planActivatedAt  DateTime?    @map("plan_activated_at") @db.Timestamptz(6)
   planExpiresAt    DateTime?    @map("plan_expires_at") @db.Timestamptz(6)
   mpPaymentId      String?      @map("mp_payment_id") @db.Text

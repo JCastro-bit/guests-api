@@ -1,0 +1,3 @@
+-- Fix: add @map("plan_status") to schema so Prisma queries use the correct column name.
+-- The column already exists as "plan_status" in the database, so no SQL changes needed.
+-- This migration is intentionally empty.
