@@ -12,6 +12,7 @@ import {
   TableWithStatsSchema,
 } from './table.schema';
 import { ErrorResponseSchema } from '../../schemas/error.schema';
+import { requireActivePlan } from '../../plugins/plan-gate';
 import { Type } from '@sinclair/typebox';
 
 const tableRoutes: FastifyPluginAsync = async (fastify) => {
@@ -22,17 +23,19 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
   const controller = new TableController(service);
 
   fastify.post('/', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['tables'],
       summary: 'Create a new table',
       body: CreateTableSchema,
       response: {
         201: TableSchema,
+        403: ErrorResponseSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.create.bind(controller),
+    handler: (req, reply) => controller.create(req as any, reply),
   });
 
   fastify.get('/', {
@@ -89,6 +92,7 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put('/:id', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['tables'],
       summary: 'Update a table',
@@ -96,27 +100,30 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
       body: UpdateTableSchema,
       response: {
         200: TableSchema,
+        403: ErrorResponseSchema,
         404: ErrorResponseSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.update.bind(controller),
+    handler: (req, reply) => controller.update(req as any, reply),
   });
 
   fastify.delete('/:id', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['tables'],
       summary: 'Delete a table (only if no invitations assigned)',
       params: TableParamsSchema,
       response: {
         204: Type.Null(),
+        403: ErrorResponseSchema,
         404: ErrorResponseSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.delete.bind(controller),
+    handler: (req, reply) => controller.delete(req as any, reply),
   });
 };
 

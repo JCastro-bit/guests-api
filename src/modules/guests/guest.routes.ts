@@ -11,6 +11,7 @@ import {
   PaginatedGuestsSchema,
 } from './guest.schema';
 import { ErrorResponseSchema } from '../../schemas/error.schema';
+import { requireActivePlan } from '../../plugins/plan-gate';
 import { Type } from '@sinclair/typebox';
 
 const guestRoutes: FastifyPluginAsync = async (fastify) => {
@@ -21,17 +22,19 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
   const controller = new GuestController(service);
 
   fastify.post('/', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['guests'],
       summary: 'Create a new guest',
       body: CreateGuestSchema,
       response: {
         201: GuestSchema,
+        403: ErrorResponseSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.create.bind(controller),
+    handler: (req, reply) => controller.create(req as any, reply),
   });
 
   fastify.get('/', {
@@ -76,6 +79,7 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put('/:id', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['guests'],
       summary: 'Update a guest',
@@ -83,25 +87,28 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
       body: UpdateGuestSchema,
       response: {
         200: GuestSchema,
+        403: ErrorResponseSchema,
         404: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.update.bind(controller),
+    handler: (req, reply) => controller.update(req as any, reply),
   });
 
   fastify.delete('/:id', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['guests'],
       summary: 'Delete a guest',
       params: GuestParamsSchema,
       response: {
         204: Type.Null(),
+        403: ErrorResponseSchema,
         404: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.delete.bind(controller),
+    handler: (req, reply) => controller.delete(req as any, reply),
   });
 };
 

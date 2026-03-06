@@ -15,6 +15,8 @@ import guestRoutes from './modules/guests/guest.routes';
 import statsRoutes from './modules/stats/stats.routes';
 import tableRoutes from './modules/tables/table.routes';
 import paymentRoutes from './modules/payments/payment.routes';
+import publicInvitationRoutes from './modules/invitations/public-invitation.routes';
+import adminRoutes from './modules/admin/admin.routes';
 import mercadopagoPlugin from './plugins/mercadopago';
 
 export const buildApp = async () => {
@@ -65,6 +67,8 @@ export const buildApp = async () => {
   await fastify.register(statsRoutes, { prefix: '/api/v1/stats' });
   await fastify.register(tableRoutes, { prefix: '/api/v1/tables' });
   await fastify.register(paymentRoutes, { prefix: '/api/v1/payments' });
+  await fastify.register(publicInvitationRoutes, { prefix: '/api/v1/public/invitations' });
+  await fastify.register(adminRoutes, { prefix: '/api/v1/admin' });
 
   // Health check
   fastify.get('/health', async () => ({ status: 'ok' }));

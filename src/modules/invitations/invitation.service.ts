@@ -33,7 +33,8 @@ export class InvitationService {
       await this.tableService.validateTableCapacity(data.tableId, userId, 0);
     }
 
-    return this.repository.create(data, userId);
+    const slug = await this.generateUniqueSlug(data.name);
+    return this.repository.create({ ...data, slug }, userId);
   }
 
   async createInvitationWithGuests(
@@ -64,10 +65,13 @@ export class InvitationService {
       await this.tableService.validateTableCapacity(invitationData.tableId, userId, guestsData.length);
     }
 
+    const slug = await this.generateUniqueSlug(invitationData.name);
+
     return this.prisma.$transaction(async (tx) => {
       const invitation = await tx.invitation.create({
         data: {
           ...invitationData,
+          slug,
           userId,
           eventDate: invitationData.eventDate ? new Date(invitationData.eventDate) : null,
         },
@@ -131,5 +135,31 @@ export class InvitationService {
   async deleteInvitation(id: string, userId: string) {
     await this.getInvitationById(id, userId);
     return this.repository.delete(id);
+  }
+
+  private async generateUniqueSlug(name: string): Promise<string> {
+    const base = name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 40)
+      .trim();
+
+    const safeBase = base || 'invitacion';
+
+    let attempts = 0;
+    while (attempts < 10) {
+      const random = Math.random().toString(36).substring(2, 6);
+      const slug = `${safeBase}-${random}`;
+      const existing = await this.repository.findBySlug(slug);
+      if (!existing) return slug;
+      attempts++;
+    }
+
+    return `${safeBase}-${Date.now().toString(36)}`;
   }
 }

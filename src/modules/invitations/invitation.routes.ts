@@ -14,6 +14,7 @@ import {
   CreateInvitationWithGuestsSchema,
 } from './invitation.schema';
 import { ErrorResponseSchema } from '../../schemas/error.schema';
+import { requireActivePlan } from '../../plugins/plan-gate';
 import { Type } from '@sinclair/typebox';
 
 const invitationRoutes: FastifyPluginAsync = async (fastify) => {
@@ -26,20 +27,23 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
   const controller = new InvitationController(service);
 
   fastify.post('/', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['invitations'],
       summary: 'Create a new invitation',
       body: CreateInvitationSchema,
       response: {
         201: InvitationSchema,
+        403: ErrorResponseSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.create.bind(controller),
+    handler: (req, reply) => controller.create(req as any, reply),
   });
 
   fastify.post('/with-guests', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['invitations'],
       summary: 'Create a new invitation with guests (atomic transaction)',
@@ -58,11 +62,12 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
             createdAt: Type.String({ format: 'date-time' }),
           })),
         }),
+        403: ErrorResponseSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.createWithGuests.bind(controller),
+    handler: (req, reply) => controller.createWithGuests(req as any, reply),
   });
 
   fastify.get('/', {
@@ -105,6 +110,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put('/:id', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['invitations'],
       summary: 'Update an invitation',
@@ -112,26 +118,29 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
       body: UpdateInvitationSchema,
       response: {
         200: InvitationSchema,
+        403: ErrorResponseSchema,
         404: ErrorResponseSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.update.bind(controller),
+    handler: (req, reply) => controller.update(req as any, reply),
   });
 
   fastify.delete('/:id', {
+    preHandler: [requireActivePlan],
     schema: {
       tags: ['invitations'],
       summary: 'Delete an invitation',
       params: InvitationParamsSchema,
       response: {
         204: Type.Null(),
+        403: ErrorResponseSchema,
         404: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
     },
-    handler: controller.delete.bind(controller),
+    handler: (req, reply) => controller.delete(req as any, reply),
   });
 };
 

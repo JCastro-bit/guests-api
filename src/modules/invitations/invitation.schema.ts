@@ -3,6 +3,7 @@ import { Type, Static } from '@sinclair/typebox';
 export const InvitationSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
   name: Type.String(),
+  slug: Type.Union([Type.String(), Type.Null()]),
   message: Type.Union([Type.String(), Type.Null()]),
   eventDate: Type.Union([Type.String({ format: 'date' }), Type.Null()]),
   location: Type.Union([Type.String(), Type.Null()]),

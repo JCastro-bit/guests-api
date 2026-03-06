@@ -9,6 +9,7 @@ const mockRepository = {
   create: vi.fn(),
   findAll: vi.fn(),
   findById: vi.fn(),
+  findBySlug: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
   count: vi.fn(),
@@ -45,7 +46,7 @@ describe('InvitationService', () => {
   });
 
   describe('createInvitation', () => {
-    it('should create an invitation successfully', async () => {
+    it('should create an invitation successfully with auto-generated slug', async () => {
       const createData: CreateInvitation = {
         name: 'Smith Family',
       };
@@ -53,6 +54,7 @@ describe('InvitationService', () => {
       const expectedInvitation = {
         id: '123',
         ...createData,
+        slug: 'smith-family-ab12',
         message: null,
         eventDate: null,
         location: null,
@@ -63,12 +65,17 @@ describe('InvitationService', () => {
       };
 
       vi.mocked(mockRepository.findByName).mockResolvedValue(null);
+      vi.mocked(mockRepository.findBySlug).mockResolvedValue(null);
       vi.mocked(mockRepository.create).mockResolvedValue(expectedInvitation);
 
       const result = await service.createInvitation(createData, userId);
 
       expect(mockRepository.findByName).toHaveBeenCalledWith('Smith Family', userId);
-      expect(mockRepository.create).toHaveBeenCalledWith(createData, userId);
+      expect(mockRepository.findBySlug).toHaveBeenCalled();
+      const createCall = vi.mocked(mockRepository.create).mock.calls[0];
+      expect(createCall[0]).toHaveProperty('slug');
+      expect(typeof createCall[0].slug).toBe('string');
+      expect(createCall[0].slug).toMatch(/^smith-family-[a-z0-9]{4}$/);
       expect(result).toEqual(expectedInvitation);
     });
 
@@ -138,6 +145,7 @@ describe('InvitationService', () => {
       const expectedInvitation = {
         id: '123',
         ...createData,
+        slug: 'smith-family-ab12',
         message: null,
         eventDate: null,
         location: null,
@@ -149,13 +157,14 @@ describe('InvitationService', () => {
       const serviceWithTable = new InvitationService(mockRepository, mockPrisma, mockTableService);
 
       vi.mocked(mockRepository.findByName).mockResolvedValue(null);
+      vi.mocked(mockRepository.findBySlug).mockResolvedValue(null);
       vi.mocked(mockTableService.validateTableCapacity).mockResolvedValue(undefined);
       vi.mocked(mockRepository.create).mockResolvedValue(expectedInvitation);
 
       const result = await serviceWithTable.createInvitation(createData, userId);
 
       expect(mockTableService.validateTableCapacity).toHaveBeenCalledWith('table-1', userId, 0);
-      expect(mockRepository.create).toHaveBeenCalledWith(createData, userId);
+      expect(mockRepository.create).toHaveBeenCalled();
       expect(result).toEqual(expectedInvitation);
     });
 
@@ -457,6 +466,61 @@ describe('InvitationService', () => {
 
       expect(mockRepository.findById).toHaveBeenCalledWith('123', userId);
       expect(mockRepository.delete).toHaveBeenCalledWith('123');
+    });
+  });
+
+  describe('slug generation', () => {
+    it('generates slug with format base-xxxx from invitation name', async () => {
+      const createData: CreateInvitation = { name: 'Smith Family' };
+
+      vi.mocked(mockRepository.findByName).mockResolvedValue(null);
+      vi.mocked(mockRepository.findBySlug).mockResolvedValue(null);
+      vi.mocked(mockRepository.create).mockResolvedValue({ id: '1' } as any);
+
+      await service.createInvitation(createData, userId);
+
+      const slug = vi.mocked(mockRepository.create).mock.calls[0][0].slug;
+      expect(slug).toMatch(/^smith-family-[a-z0-9]{4}$/);
+    });
+
+    it('normalizes accented characters in slug', async () => {
+      const createData: CreateInvitation = { name: 'Ana García' };
+
+      vi.mocked(mockRepository.findByName).mockResolvedValue(null);
+      vi.mocked(mockRepository.findBySlug).mockResolvedValue(null);
+      vi.mocked(mockRepository.create).mockResolvedValue({ id: '1' } as any);
+
+      await service.createInvitation(createData, userId);
+
+      const slug = vi.mocked(mockRepository.create).mock.calls[0][0].slug;
+      expect(slug).toMatch(/^ana-garcia-[a-z0-9]{4}$/);
+    });
+
+    it('uses fallback "invitacion" if name is all symbols', async () => {
+      const createData: CreateInvitation = { name: '!!!@@@###' };
+
+      vi.mocked(mockRepository.findByName).mockResolvedValue(null);
+      vi.mocked(mockRepository.findBySlug).mockResolvedValue(null);
+      vi.mocked(mockRepository.create).mockResolvedValue({ id: '1' } as any);
+
+      await service.createInvitation(createData, userId);
+
+      const slug = vi.mocked(mockRepository.create).mock.calls[0][0].slug;
+      expect(slug).toMatch(/^invitacion-[a-z0-9]{4}$/);
+    });
+
+    it('retries if slug collision occurs', async () => {
+      const createData: CreateInvitation = { name: 'Test' };
+
+      vi.mocked(mockRepository.findByName).mockResolvedValue(null);
+      vi.mocked(mockRepository.findBySlug)
+        .mockResolvedValueOnce({ id: 'existing' } as any)
+        .mockResolvedValueOnce(null);
+      vi.mocked(mockRepository.create).mockResolvedValue({ id: '1' } as any);
+
+      await service.createInvitation(createData, userId);
+
+      expect(mockRepository.findBySlug).toHaveBeenCalledTimes(2);
     });
   });
 

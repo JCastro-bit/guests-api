@@ -4,7 +4,7 @@ import { CreateInvitation, UpdateInvitation } from './invitation.schema';
 export class InvitationRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async create(data: CreateInvitation, userId: string) {
+  async create(data: CreateInvitation & { slug?: string }, userId: string) {
     return this.prisma.invitation.create({
       data: {
         ...data,
@@ -74,6 +74,25 @@ export class InvitationRepository {
       pending,
       declined,
     };
+  }
+
+  async findBySlug(slug: string) {
+    return this.prisma.invitation.findFirst({
+      where: { slug, deletedAt: null },
+      include: {
+        guests: { where: { deletedAt: null } },
+        table: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            plan: true,
+            planStatus: true,
+          },
+        },
+      },
+    });
   }
 
   async findById(id: string, userId: string) {
