@@ -1,5 +1,11 @@
 import { Type, Static } from '@sinclair/typebox';
 
+const PublicGuestSchema = Type.Object({
+  id: Type.String(),
+  name: Type.String(),
+  status: Type.String(),
+});
+
 export const PublicInvitationResponseSchema = Type.Object({
   slug: Type.String(),
   coupleName: Type.String(),
@@ -7,6 +13,7 @@ export const PublicInvitationResponseSchema = Type.Object({
   eventDate: Type.Union([Type.String(), Type.Null()]),
   location: Type.Union([Type.String(), Type.Null()]),
   ownerPlan: Type.String(),
+  guests: Type.Array(PublicGuestSchema),
 });
 
 export const PublicSlugParamsSchema = Type.Object({

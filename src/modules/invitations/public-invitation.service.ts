@@ -25,6 +25,11 @@ export class PublicInvitationService {
         : null,
       location: invitation.location ?? null,
       ownerPlan: invitation.user?.plan ?? 'free',
+      guests: (invitation.guests ?? []).map((g) => ({
+        id: g.id,
+        name: g.name,
+        status: g.status,
+      })),
     };
   }
 

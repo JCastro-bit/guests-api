@@ -61,6 +61,7 @@ describe('PublicInvitationService', () => {
         eventDate: '2026-06-15',
         location: 'Guadalajara',
         ownerPlan: 'esencial',
+        guests: [{ id: 'guest-1', name: 'Juan', status: 'pending' }],
       });
     });
 
@@ -94,9 +95,13 @@ describe('PublicInvitationService', () => {
       const result = await service.getBySlug('test');
       expect(result).not.toHaveProperty('userId');
       expect(result).not.toHaveProperty('user');
-      expect(result).not.toHaveProperty('guests');
       expect(result).not.toHaveProperty('id');
       expect(result).toHaveProperty('ownerPlan');
+      expect(result).toHaveProperty('guests');
+      // guests should only expose id, name, status — no email, phone, side
+      expect(result.guests[0]).not.toHaveProperty('email');
+      expect(result.guests[0]).not.toHaveProperty('phone');
+      expect(result.guests[0]).not.toHaveProperty('side');
     });
   });
 
