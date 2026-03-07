@@ -42,6 +42,9 @@ model Invitation {
   message      String?  @db.Text
   eventDate    DateTime? @map("event_date") @db.Date
   location     String?  @db.Text
+  templateId   String?  @map("template_id") @db.Text
+  stylePreset  String?  @map("style_preset") @db.Text
+  colorPalette String?  @map("color_palette") @db.Text
   qrCode       String?  @map("qr_code") @db.Text
   operationId  String?  @map("operation_id") @db.Text
   tableId      String?  @map("table_id") @db.Uuid

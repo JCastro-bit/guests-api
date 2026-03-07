@@ -6,6 +6,7 @@ export const PublicInvitationResponseSchema = Type.Object({
   message: Type.Union([Type.String(), Type.Null()]),
   eventDate: Type.Union([Type.String(), Type.Null()]),
   location: Type.Union([Type.String(), Type.Null()]),
+  ownerPlan: Type.String(),
 });
 
 export const PublicSlugParamsSchema = Type.Object({

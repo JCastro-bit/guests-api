@@ -17,6 +17,10 @@ export class InvitationController {
     reply: FastifyReply
   ) {
     const userId = request.user.id;
+
+    const limitError = await this.checkFreeInvitationLimit(request, userId);
+    if (limitError) return reply.status(403).send(limitError);
+
     const invitation = await this.service.createInvitation(request.body, userId);
     return reply.status(201).send(invitation);
   }
@@ -26,9 +30,36 @@ export class InvitationController {
     reply: FastifyReply
   ) {
     const userId = request.user.id;
+
+    const limitError = await this.checkFreeInvitationLimit(request, userId);
+    if (limitError) return reply.status(403).send(limitError);
+
     const { invitation, guests } = request.body;
     const result = await this.service.createInvitationWithGuests(invitation, guests, userId);
     return reply.status(201).send(result);
+  }
+
+  private async checkFreeInvitationLimit(request: FastifyRequest, userId: string) {
+    const user = await request.server.prisma.user.findFirst({
+      where: { id: userId },
+      select: { plan: true },
+    });
+
+    if (user?.plan === 'free') {
+      const count = await request.server.prisma.invitation.count({
+        where: { userId, deletedAt: null },
+      });
+      if (count >= 1) {
+        return {
+          statusCode: 403,
+          error: 'INVITATION_LIMIT_EXCEEDED',
+          message: 'El plan gratuito permite 1 invitación. Actualiza al Plan Esencial para invitaciones ilimitadas.',
+          requiredPlan: 'esencial',
+          upgradeUrl: 'https://app.lovepostal.studio/upgrade',
+        };
+      }
+    }
+    return null;
   }
 
   async getAll(

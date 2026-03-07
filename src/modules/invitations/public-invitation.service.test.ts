@@ -60,6 +60,7 @@ describe('PublicInvitationService', () => {
         message: 'Te esperamos!',
         eventDate: '2026-06-15',
         location: 'Guadalajara',
+        ownerPlan: 'esencial',
       });
     });
 
@@ -87,7 +88,7 @@ describe('PublicInvitationService', () => {
       await expect(service.getBySlug('nonexistent')).rejects.toThrow('Invitation not found');
     });
 
-    it('does NOT include userId or owner data in response', async () => {
+    it('does NOT include userId or owner data in response (except ownerPlan)', async () => {
       vi.mocked(mockRepository.findBySlug).mockResolvedValue(makeInvitation());
 
       const result = await service.getBySlug('test');
@@ -95,6 +96,7 @@ describe('PublicInvitationService', () => {
       expect(result).not.toHaveProperty('user');
       expect(result).not.toHaveProperty('guests');
       expect(result).not.toHaveProperty('id');
+      expect(result).toHaveProperty('ownerPlan');
     });
   });
 

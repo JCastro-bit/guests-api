@@ -3,8 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { EmailService } from '../email/email.service';
 
 const PLAN_PRICES = {
-  esencial: { amount: 2250, label: 'LOVEPOSTAL — Plan Esencial' },
-  premium: { amount: 4499, label: 'LOVEPOSTAL — Plan Premium' },
+  esencial: { amount: 1499, label: 'LOVEPOSTAL — Plan Esencial' },
+  premium: { amount: 2999, label: 'LOVEPOSTAL — Plan Premium' },
 } as const;
 
 type PlanKey = keyof typeof PLAN_PRICES;
@@ -34,6 +34,11 @@ export class PaymentService {
             currency_id: 'MXN',
           },
         ],
+        payment_methods: {
+          installments: 24,
+          default_installments: 1,
+          excluded_payment_types: [],
+        },
         payer: {
           email: user.email,
           name: user.name ?? undefined,

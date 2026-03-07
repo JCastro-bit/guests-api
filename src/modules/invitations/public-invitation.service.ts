@@ -24,6 +24,7 @@ export class PublicInvitationService {
         ? invitation.eventDate.toISOString().split('T')[0]
         : null,
       location: invitation.location ?? null,
+      ownerPlan: invitation.user?.plan ?? 'free',
     };
   }
 
