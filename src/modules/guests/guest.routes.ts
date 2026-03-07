@@ -14,6 +14,18 @@ import { ErrorResponseSchema } from '../../schemas/error.schema';
 
 import { Type } from '@sinclair/typebox';
 
+const GuestLimitErrorSchema = Type.Object({
+  error: Type.Object({
+    statusCode: Type.Integer(),
+    message: Type.String(),
+    code: Type.Optional(Type.String()),
+    currentCount: Type.Optional(Type.Integer()),
+    limit: Type.Optional(Type.Integer()),
+    requiredPlan: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    upgradeUrl: Type.Optional(Type.String()),
+  }),
+});
+
 const guestRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('onRequest', fastify.authenticate);
 
@@ -29,7 +41,7 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
       body: CreateGuestSchema,
       response: {
         201: GuestSchema,
-        403: ErrorResponseSchema,
+        403: GuestLimitErrorSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],

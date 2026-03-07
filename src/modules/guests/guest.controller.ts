@@ -3,7 +3,8 @@ import { GuestService } from './guest.service';
 import { CreateGuest, UpdateGuest, GuestParams, GuestQuery } from './guest.schema';
 import { assertValidUUID } from '../../lib/uuid';
 
-const GUEST_LIMITS: Record<string, number> = { free: 50, esencial: 150, premium: 500 };
+const HARD_LIMITS: Record<string, number> = { free: 60, esencial: 160, premium: 510 };
+const SOFT_LIMITS: Record<string, number> = { free: 50, esencial: 150, premium: 500 };
 const NEXT_PLAN: Record<string, string | null> = { free: 'esencial', esencial: 'premium', premium: null };
 
 export class GuestController {
@@ -21,20 +22,23 @@ export class GuestController {
     });
 
     const plan = user?.plan ?? 'free';
-    const limit = GUEST_LIMITS[plan] ?? 50;
+    const hardLimit = HARD_LIMITS[plan] ?? 60;
+    const softLimit = SOFT_LIMITS[plan] ?? 50;
     const count = await request.server.prisma.guest.count({
       where: { userId, deletedAt: null },
     });
 
-    if (count >= limit) {
+    if (count >= hardLimit) {
       return reply.status(403).send({
-        statusCode: 403,
-        error: 'GUEST_LIMIT_EXCEEDED',
-        message: 'Has alcanzado el límite de invitados de tu plan',
-        currentCount: count,
-        limit,
-        requiredPlan: NEXT_PLAN[plan],
-        upgradeUrl: 'https://app.lovepostal.studio/upgrade',
+        error: {
+          statusCode: 403,
+          message: `Has alcanzado el limite de ${softLimit} invitados de tu plan`,
+          code: 'GUEST_LIMIT_EXCEEDED',
+          currentCount: count,
+          limit: softLimit,
+          requiredPlan: NEXT_PLAN[plan],
+          upgradeUrl: '/upgrade',
+        },
       });
     }
 

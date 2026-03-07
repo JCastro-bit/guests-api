@@ -17,6 +17,16 @@ import { ErrorResponseSchema } from '../../schemas/error.schema';
 
 import { Type } from '@sinclair/typebox';
 
+const PlanLimitErrorSchema = Type.Object({
+  error: Type.Object({
+    statusCode: Type.Integer(),
+    message: Type.String(),
+    code: Type.Optional(Type.String()),
+    requiredPlan: Type.Optional(Type.String()),
+    upgradeUrl: Type.Optional(Type.String()),
+  }),
+});
+
 const invitationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('onRequest', fastify.authenticate);
 
@@ -34,7 +44,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
       body: CreateInvitationSchema,
       response: {
         201: InvitationSchema,
-        403: ErrorResponseSchema,
+        403: PlanLimitErrorSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],
@@ -62,7 +72,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
             createdAt: Type.String({ format: 'date-time' }),
           })),
         }),
-        403: ErrorResponseSchema,
+        403: PlanLimitErrorSchema,
         409: ErrorResponseSchema,
       },
       security: [{ bearerAuth: [] }],

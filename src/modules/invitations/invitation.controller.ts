@@ -51,11 +51,13 @@ export class InvitationController {
       });
       if (count >= 1) {
         return {
-          statusCode: 403,
-          error: 'INVITATION_LIMIT_EXCEEDED',
-          message: 'El plan gratuito permite 1 invitación. Actualiza al Plan Esencial para invitaciones ilimitadas.',
-          requiredPlan: 'esencial',
-          upgradeUrl: 'https://app.lovepostal.studio/upgrade',
+          error: {
+            statusCode: 403,
+            message: 'El plan gratuito permite 1 grupo de invitados. Actualiza al Plan Esencial para grupos ilimitados.',
+            code: 'INVITATION_LIMIT_EXCEEDED',
+            requiredPlan: 'esencial',
+            upgradeUrl: '/upgrade',
+          },
         };
       }
     }
