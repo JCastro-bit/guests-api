@@ -11,7 +11,7 @@ import {
   PaginatedGuestsSchema,
 } from './guest.schema';
 import { ErrorResponseSchema } from '../../schemas/error.schema';
-import { requireActivePlan } from '../../plugins/plan-gate';
+
 import { Type } from '@sinclair/typebox';
 
 const guestRoutes: FastifyPluginAsync = async (fastify) => {
@@ -22,7 +22,7 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
   const controller = new GuestController(service);
 
   fastify.post('/', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['guests'],
       summary: 'Create a new guest',
@@ -79,7 +79,7 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put('/:id', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['guests'],
       summary: 'Update a guest',
@@ -96,7 +96,7 @@ const guestRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.delete('/:id', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['guests'],
       summary: 'Delete a guest',

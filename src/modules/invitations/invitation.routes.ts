@@ -14,7 +14,7 @@ import {
   CreateInvitationWithGuestsSchema,
 } from './invitation.schema';
 import { ErrorResponseSchema } from '../../schemas/error.schema';
-import { requireActivePlan } from '../../plugins/plan-gate';
+
 import { Type } from '@sinclair/typebox';
 
 const invitationRoutes: FastifyPluginAsync = async (fastify) => {
@@ -27,7 +27,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
   const controller = new InvitationController(service);
 
   fastify.post('/', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['invitations'],
       summary: 'Create a new invitation',
@@ -43,7 +43,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post('/with-guests', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['invitations'],
       summary: 'Create a new invitation with guests (atomic transaction)',
@@ -110,7 +110,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put('/:id', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['invitations'],
       summary: 'Update an invitation',
@@ -128,7 +128,7 @@ const invitationRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.delete('/:id', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['invitations'],
       summary: 'Delete an invitation',

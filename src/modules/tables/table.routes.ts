@@ -12,7 +12,7 @@ import {
   TableWithStatsSchema,
 } from './table.schema';
 import { ErrorResponseSchema } from '../../schemas/error.schema';
-import { requireActivePlan } from '../../plugins/plan-gate';
+
 import { Type } from '@sinclair/typebox';
 
 const tableRoutes: FastifyPluginAsync = async (fastify) => {
@@ -23,7 +23,7 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
   const controller = new TableController(service);
 
   fastify.post('/', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['tables'],
       summary: 'Create a new table',
@@ -92,7 +92,7 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put('/:id', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['tables'],
       summary: 'Update a table',
@@ -110,7 +110,7 @@ const tableRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.delete('/:id', {
-    preHandler: [requireActivePlan],
+
     schema: {
       tags: ['tables'],
       summary: 'Delete a table (only if no invitations assigned)',
