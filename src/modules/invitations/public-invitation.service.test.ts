@@ -61,6 +61,7 @@ describe('PublicInvitationService', () => {
         eventDate: '2026-06-15',
         location: 'Guadalajara',
         ownerPlan: 'esencial',
+        tableName: null,
         guests: [{ id: 'guest-1', name: 'Juan', status: 'pending' }],
       });
     });

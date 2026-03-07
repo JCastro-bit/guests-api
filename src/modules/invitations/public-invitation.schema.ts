@@ -13,6 +13,7 @@ export const PublicInvitationResponseSchema = Type.Object({
   eventDate: Type.Union([Type.String(), Type.Null()]),
   location: Type.Union([Type.String(), Type.Null()]),
   ownerPlan: Type.String(),
+  tableName: Type.Union([Type.String(), Type.Null()]),
   guests: Type.Array(PublicGuestSchema),
 });
 
