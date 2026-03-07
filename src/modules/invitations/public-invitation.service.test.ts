@@ -9,6 +9,9 @@ const mockRepository = {
 } as unknown as InvitationRepository;
 
 const mockPrisma = {
+  invitation: {
+    findFirst: vi.fn(),
+  },
   guest: {
     findFirst: vi.fn(),
     update: vi.fn(),
@@ -49,8 +52,16 @@ describe('PublicInvitationService', () => {
   });
 
   describe('getBySlug', () => {
-    it('returns public fields of an existing invitation', async () => {
-      vi.mocked(mockRepository.findBySlug).mockResolvedValue(makeInvitation());
+    const masterData = {
+      name: 'Ana y Carlos',
+      message: 'Te esperamos!',
+      eventDate: new Date('2026-06-15'),
+      location: 'Guadalajara',
+    };
+
+    it('returns public fields using master invitation data', async () => {
+      vi.mocked(mockRepository.findBySlug).mockResolvedValue(makeInvitation({ name: 'Familia Garcia' }));
+      vi.mocked(mockPrisma.invitation.findFirst).mockResolvedValue(masterData as any);
 
       const result = await service.getBySlug('ana-y-carlos-ab12');
 
@@ -66,17 +77,19 @@ describe('PublicInvitationService', () => {
       });
     });
 
-    it('maps name to coupleName', async () => {
-      vi.mocked(mockRepository.findBySlug).mockResolvedValue(makeInvitation({ name: 'Maria y Pedro' }));
+    it('uses coupleName from master, not group name', async () => {
+      vi.mocked(mockRepository.findBySlug).mockResolvedValue(makeInvitation({ name: 'Companeros de Trabajo' }));
+      vi.mocked(mockPrisma.invitation.findFirst).mockResolvedValue({ ...masterData, name: 'Maria y Pedro' } as any);
 
       const result = await service.getBySlug('test');
       expect(result.coupleName).toBe('Maria y Pedro');
     });
 
-    it('returns null for optional absent fields', async () => {
-      vi.mocked(mockRepository.findBySlug).mockResolvedValue(
-        makeInvitation({ message: null, eventDate: null, location: null })
-      );
+    it('returns null for optional absent fields from master', async () => {
+      vi.mocked(mockRepository.findBySlug).mockResolvedValue(makeInvitation());
+      vi.mocked(mockPrisma.invitation.findFirst).mockResolvedValue({
+        name: 'Ana y Carlos', message: null, eventDate: null, location: null,
+      } as any);
 
       const result = await service.getBySlug('test');
       expect(result.message).toBeNull();
@@ -92,6 +105,7 @@ describe('PublicInvitationService', () => {
 
     it('does NOT include userId or owner data in response (except ownerPlan)', async () => {
       vi.mocked(mockRepository.findBySlug).mockResolvedValue(makeInvitation());
+      vi.mocked(mockPrisma.invitation.findFirst).mockResolvedValue(masterData as any);
 
       const result = await service.getBySlug('test');
       expect(result).not.toHaveProperty('userId');
