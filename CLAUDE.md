@@ -42,7 +42,7 @@ src/
 ├── app.ts           # buildApp() — registra plugins y rutas (/api/v1/*)
 └── server.ts        # Entrypoint — listen + graceful shutdown
 prisma/
-├── schema.prisma    # Modelos: User (+ PlanTier, PlanStatus enums), Table, Invitation (+ slug), Guest (+ guestMessage)
+├── schema.prisma    # Modelos: User (+ PlanTier, PlanStatus enums), Table, Invitation (+ slug, templateId, stylePreset, colorPalette), Guest (+ guestMessage)
 ├── seed.js          # Upsert admin (ADMIN_EMAIL/ADMIN_PASSWORD). JS, no TS. Non-fatal en Docker (||)
 └── migrations/      # 10 migraciones SQL (init → fix_plan_status_column_mapping)
 ```
@@ -52,7 +52,7 @@ prisma/
 **Rutas públicas (sin JWT):**
 - `POST /api/v1/auth/register`, `POST /api/v1/auth/login`
 - `POST /api/v1/auth/forgot-password`, `POST /api/v1/auth/reset-password`
-- `GET /api/v1/public/invitations/:slug` — datos públicos de invitación por slug
+- `GET /api/v1/public/invitations/:slug` — datos públicos de invitación por slug (incluye templateId, colorPalette)
 - `PATCH /api/v1/public/invitations/:slug/rsvp` — confirmar/declinar asistencia (rate limited: 5/5min)
 - `POST /api/v1/payments/webhook` — webhook MercadoPago (HMAC verificada)
 
@@ -125,8 +125,9 @@ El schema usa camelCase para campos TypeScript y `@map("snake_case")` para colum
 11. Modelo User tiene campos de plan (PlanTier: free|esencial|premium, PlanStatus: inactive|active|expired) y campos de pago (mpPaymentId)
 12. Pagos MercadoPago: webhook idempotente (verifica mpPaymentId antes de activar), firma HMAC verificada, external_reference formato `userId:plan:timestamp`
 13. Precios: Esencial $2,250 MXN / Premium $4,499 MXN — definidos en `PaymentService.PLAN_PRICES`
-14. Invitaciones tienen slug único (nullable) para acceso público. Guests tienen guestMessage para mensajes de RSVP
-15. RSVP público: actualiza status de guests y guarda guestMessage, envía notificación por email al owner (fire-and-forget)
+14. Invitaciones tienen slug único (nullable) para acceso público. Guests tienen guestMessage para mensajes de RSVP. Invitaciones tienen campos de diseño: templateId, stylePreset, colorPalette (todos nullable String)
+15. UpdateInvitationSchema acepta templateId y colorPalette. PublicInvitationService.getBySlug devuelve templateId y colorPalette del master invitation
+16. RSVP público: actualiza status de guests y guarda guestMessage, envía notificación por email al owner (fire-and-forget)
 
 ## Docker y deploy
 

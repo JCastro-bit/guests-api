@@ -57,6 +57,8 @@ describe('PublicInvitationService', () => {
       message: 'Te esperamos!',
       eventDate: new Date('2026-06-15'),
       location: 'Guadalajara',
+      templateId: null,
+      colorPalette: null,
     };
 
     it('returns public fields using master invitation data', async () => {
@@ -71,6 +73,8 @@ describe('PublicInvitationService', () => {
         message: 'Te esperamos!',
         eventDate: '2026-06-15',
         location: 'Guadalajara',
+        templateId: null,
+        colorPalette: null,
         ownerPlan: 'esencial',
         tableName: null,
         guests: [{ id: 'guest-1', name: 'Juan', status: 'pending' }],

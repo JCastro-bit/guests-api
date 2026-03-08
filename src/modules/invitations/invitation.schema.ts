@@ -7,6 +7,9 @@ export const InvitationSchema = Type.Object({
   message: Type.Union([Type.String(), Type.Null()]),
   eventDate: Type.Union([Type.String({ format: 'date' }), Type.Null()]),
   location: Type.Union([Type.String(), Type.Null()]),
+  templateId: Type.Union([Type.String(), Type.Null()]),
+  stylePreset: Type.Union([Type.String(), Type.Null()]),
+  colorPalette: Type.Union([Type.String(), Type.Null()]),
   qrCode: Type.Union([Type.String(), Type.Null()]), // TODO: evaluar remoción si no se usa en frontend
   operationId: Type.Union([Type.String(), Type.Null()]), // TODO: evaluar remoción si no se usa en frontend
   tableId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
@@ -39,6 +42,8 @@ export const UpdateInvitationSchema = Type.Object({
   message: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   eventDate: Type.Optional(Type.Union([Type.String({ format: 'date' }), Type.Null()])),
   location: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  templateId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  colorPalette: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   qrCode: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   operationId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   tableId: Type.Optional(Type.Union([Type.String({ format: 'uuid' }), Type.Null()])),

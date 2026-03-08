@@ -20,7 +20,7 @@ export class PublicInvitationService {
     const master = await this.prisma.invitation.findFirst({
       where: { userId: invitation.userId, deletedAt: null },
       orderBy: { createdAt: 'asc' },
-      select: { name: true, message: true, eventDate: true, location: true },
+      select: { name: true, message: true, eventDate: true, location: true, templateId: true, colorPalette: true },
     });
 
     return {
@@ -31,6 +31,8 @@ export class PublicInvitationService {
         ? master.eventDate.toISOString().split('T')[0]
         : null,
       location: master?.location ?? null,
+      templateId: master?.templateId ?? null,
+      colorPalette: master?.colorPalette ?? null,
       ownerPlan: invitation.user?.plan ?? 'free',
       tableName: invitation.table?.name ?? null,
       guests: (invitation.guests ?? []).map((g) => ({
