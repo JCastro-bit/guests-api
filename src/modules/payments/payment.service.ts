@@ -54,8 +54,8 @@ export class PaymentService {
         },
         payer: {
           email: user.email,
-          first_name: firstName,
-          last_name: lastName,
+          name: firstName,
+          surname: lastName,
         },
         back_urls: {
           success: `${process.env.APP_URL}/upgrade/success`,

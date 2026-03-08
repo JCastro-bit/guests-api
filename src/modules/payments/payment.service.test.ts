@@ -79,7 +79,7 @@ describe('PaymentService', () => {
               currency_id: 'MXN',
             }),
           ],
-          payer: { email: 'test@example.com', first_name: 'Test', last_name: 'User' },
+          payer: { email: 'test@example.com', name: 'Test', surname: 'User' },
           external_reference: expect.stringMatching(/^user-1:esencial:\d+$/),
         }),
       });
