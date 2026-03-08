@@ -123,7 +123,7 @@ El schema usa camelCase para campos TypeScript y `@map("snake_case")` para colum
 9. Multi-tenant: todos los modelos de datos (Table, Invitation, Guest) tienen `userId` FK — todas las queries filtran por userId
 10. Forgot password: no revela si el email existe (prevención de user enumeration). Token expira en 1 hora
 11. Modelo User tiene campos de plan (PlanTier: free|esencial|premium, PlanStatus: inactive|active|expired) y campos de pago (mpPaymentId)
-12. Pagos MercadoPago: webhook idempotente (verifica mpPaymentId antes de activar), firma HMAC verificada, external_reference formato `userId|plan`
+12. Pagos MercadoPago: webhook idempotente (verifica mpPaymentId antes de activar), firma HMAC verificada, external_reference formato `userId:plan:timestamp`
 13. Precios: Esencial $2,250 MXN / Premium $4,499 MXN — definidos en `PaymentService.PLAN_PRICES`
 14. Invitaciones tienen slug único (nullable) para acceso público. Guests tienen guestMessage para mensajes de RSVP
 15. RSVP público: actualiza status de guests y guarda guestMessage, envía notificación por email al owner (fire-and-forget)

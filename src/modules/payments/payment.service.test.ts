@@ -70,15 +70,17 @@ describe('PaymentService', () => {
         body: expect.objectContaining({
           items: [
             expect.objectContaining({
-              id: 'esencial',
+              id: 'plan-esencial',
               title: 'LOVEPOSTAL — Plan Esencial',
+              description: 'LOVEPOSTAL Plan Esencial - Invitaciones digitales para boda',
+              category_id: 'services',
               quantity: 1,
               unit_price: 1499,
               currency_id: 'MXN',
             }),
           ],
-          payer: { email: 'test@example.com', name: 'Test User' },
-          external_reference: 'user-1|esencial',
+          payer: { email: 'test@example.com', first_name: 'Test', last_name: 'User' },
+          external_reference: expect.stringMatching(/^user-1:esencial:\d+$/),
         }),
       });
       expect(result).toEqual({
@@ -93,7 +95,7 @@ describe('PaymentService', () => {
     it('should activate plan when payment is approved', async () => {
       mockMp.payment.get.mockResolvedValue({
         status: 'approved',
-        external_reference: 'user-1|premium',
+        external_reference: 'user-1:premium:1234567890',
       });
 
       mockPrisma.user.findUnique.mockResolvedValue({
@@ -122,7 +124,7 @@ describe('PaymentService', () => {
     it('should skip when payment is not approved', async () => {
       mockMp.payment.get.mockResolvedValue({
         status: 'pending',
-        external_reference: 'user-1|esencial',
+        external_reference: 'user-1:esencial:1234567890',
       });
 
       await service.processWebhook('12345');
@@ -149,7 +151,7 @@ describe('PaymentService', () => {
     it('should be idempotent — skip already processed payment', async () => {
       mockMp.payment.get.mockResolvedValue({
         status: 'approved',
-        external_reference: 'user-1|esencial',
+        external_reference: 'user-1:esencial:1234567890',
       });
 
       mockPrisma.user.findUnique.mockResolvedValue({
@@ -172,7 +174,7 @@ describe('PaymentService', () => {
     it('should log error when user not found', async () => {
       mockMp.payment.get.mockResolvedValue({
         status: 'approved',
-        external_reference: 'nonexistent|premium',
+        external_reference: 'nonexistent:premium:1234567890',
       });
 
       mockPrisma.user.findUnique.mockResolvedValue(null);
@@ -189,7 +191,7 @@ describe('PaymentService', () => {
     it('should send payment confirmation email on activation', async () => {
       mockMp.payment.get.mockResolvedValue({
         status: 'approved',
-        external_reference: 'user-1|esencial',
+        external_reference: 'user-1:esencial:1234567890',
       });
 
       mockPrisma.user.findUnique.mockResolvedValue({
@@ -228,14 +230,16 @@ describe('PaymentService', () => {
         body: expect.objectContaining({
           items: [
             expect.objectContaining({
-              id: 'premium',
+              id: 'plan-premium',
               title: 'LOVEPOSTAL — Plan Premium',
+              description: 'LOVEPOSTAL Plan Premium - Invitaciones digitales para boda',
+              category_id: 'services',
               quantity: 1,
               unit_price: 2999,
               currency_id: 'MXN',
             }),
           ],
-          external_reference: 'user-1|premium',
+          external_reference: expect.stringMatching(/^user-1:premium:\d+$/),
         }),
       });
       expect(result.preferenceId).toBe('pref-456');

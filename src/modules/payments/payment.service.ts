@@ -3,8 +3,16 @@ import type { FastifyInstance } from 'fastify';
 import { EmailService } from '../email/email.service';
 
 const PLAN_PRICES = {
-  esencial: { amount: 1499, label: 'LOVEPOSTAL — Plan Esencial' },
-  premium: { amount: 2999, label: 'LOVEPOSTAL — Plan Premium' },
+  esencial: {
+    amount: 1499,
+    label: 'LOVEPOSTAL — Plan Esencial',
+    description: 'LOVEPOSTAL Plan Esencial - Invitaciones digitales para boda',
+  },
+  premium: {
+    amount: 2999,
+    label: 'LOVEPOSTAL — Plan Premium',
+    description: 'LOVEPOSTAL Plan Premium - Invitaciones digitales para boda',
+  },
 } as const;
 
 type PlanKey = keyof typeof PLAN_PRICES;
@@ -21,14 +29,19 @@ export class PaymentService {
       where: { id: userId },
     });
 
-    const { amount, label } = PLAN_PRICES[plan];
+    const { amount, label, description } = PLAN_PRICES[plan];
+    const nameParts = (user.name ?? '').trim().split(/\s+/);
+    const firstName = nameParts[0] || undefined;
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
 
     const preference = await this.fastify.mp.preference.create({
       body: {
         items: [
           {
-            id: plan,
+            id: `plan-${plan}`,
             title: label,
+            description,
+            category_id: 'services',
             quantity: 1,
             unit_price: amount,
             currency_id: 'MXN',
@@ -41,7 +54,8 @@ export class PaymentService {
         },
         payer: {
           email: user.email,
-          name: user.name ?? undefined,
+          first_name: firstName,
+          last_name: lastName,
         },
         back_urls: {
           success: `${process.env.APP_URL}/upgrade/success`,
@@ -49,7 +63,7 @@ export class PaymentService {
           pending: `${process.env.APP_URL}/upgrade/pending`,
         },
         auto_return: 'approved',
-        external_reference: `${userId}|${plan}`,
+        external_reference: `${userId}:${plan}:${Date.now()}`,
         notification_url: `${process.env.API_URL ?? 'https://api.lovepostal.studio'}/api/v1/payments/webhook`,
         statement_descriptor: 'LOVEPOSTAL',
       },
@@ -71,7 +85,7 @@ export class PaymentService {
     }
 
     const externalRef = payment.external_reference ?? '';
-    const [userId, plan] = externalRef.split('|');
+    const [userId, plan] = externalRef.split(':');
 
     if (!userId || !plan) {
       this.fastify.log.error({ externalRef }, 'Invalid external_reference in webhook');
